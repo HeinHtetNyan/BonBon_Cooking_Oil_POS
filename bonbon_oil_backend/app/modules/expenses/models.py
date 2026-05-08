@@ -10,11 +10,11 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
-from app.database.mixins import FullAuditMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.mixins import FullAuditMixin, OptimisticLockMixin, SyncMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.expenses.enums import ExpenseCategory, ExpenseStatus
 
 
-class Expense(FullAuditMixin, Base):
+class Expense(OptimisticLockMixin, SyncMixin, FullAuditMixin, Base):
     __tablename__ = "expenses"
 
     reference_number: Mapped[str] = mapped_column(

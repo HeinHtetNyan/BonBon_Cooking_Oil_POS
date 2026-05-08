@@ -38,6 +38,27 @@ class ProductionBatchRepository(BaseRepository[ProductionBatch]):
         result = await self._session.execute(q)
         return result.scalar_one_or_none()
 
+    async def get_with_usages_for_update(self, batch_id: UUID) -> ProductionBatch | None:
+        """
+        Lock the batch row and eagerly load material_usages and outputs.
+
+        Two-phase approach (mirrors VoucherRepository.get_with_items_and_payments_for_update):
+        1. SELECT ... FOR UPDATE to prevent concurrent state transitions.
+        2. session.refresh() to load relationships within the same transaction.
+        """
+        lock_q = (
+            select(ProductionBatch)
+            .where(ProductionBatch.id == batch_id)
+            .where(ProductionBatch.deleted_at.is_(None))
+            .with_for_update()
+        )
+        result = await self._session.execute(lock_q)
+        batch = result.scalar_one_or_none()
+        if batch is None:
+            return None
+        await self._session.refresh(batch, attribute_names=["material_usages", "outputs"])
+        return batch
+
     async def next_batch_number(self) -> str:
         """
         Generate the next batch number in format BATCHYYYYMMDD<seq>.

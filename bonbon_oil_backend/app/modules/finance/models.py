@@ -19,7 +19,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Boolean, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -249,6 +249,45 @@ class CustomerDebt(FullAuditMixin, Base):
 
     __table_args__ = (
         Index("ix_customer_debts_customer_status", "customer_id", "status"),
+    )
+
+
+class FinancialSnapshot(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """
+    Daily or monthly snapshot of a financial account's balance.
+
+    Snapshots serve two purposes:
+    1. Performance — fast point-in-time balance queries for reporting without
+       replaying the full JournalEntry ledger.
+    2. Reconciliation — checkpoints that the FinancialReconciliationService
+       uses to quickly detect drifts.
+
+    A unique constraint on (account_id, snapshot_date, snapshot_type) prevents
+    duplicate snapshots. The Celery snapshot task uses INSERT ... ON CONFLICT
+    DO NOTHING to remain idempotent.
+    """
+
+    __tablename__ = "financial_snapshots"
+
+    account_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("financial_accounts.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    snapshot_date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    balance: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
+    # "daily" | "monthly"
+    snapshot_type: Mapped[str] = mapped_column(String(16), nullable=False, default="daily")
+
+    actor: Mapped[str] = mapped_column(String(36), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(64), nullable=False, default="default")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "account_id", "snapshot_date", "snapshot_type",
+            name="uq_financial_snapshot_account_date_type",
+        ),
     )
 
 

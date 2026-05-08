@@ -131,13 +131,22 @@ class InventoryService(BaseService):
         """
         Core movement recording. All inventory changes MUST go through here.
 
+        Row-level locking (SELECT ... FOR UPDATE) is acquired on the
+        InventoryItem before reading the balance. This prevents the classic
+        TOCTOU race condition where two concurrent outbound movements both
+        pass the balance check independently and then both subtract, resulting
+        in a negative balance.
+
+        The lock is held until the enclosing transaction commits.
+
         - Validates sufficient stock for outbound movements.
         - Converts to canonical unit using UnitConversionService.
         - Updates denormalized balance atomically.
         - Stores balance_after snapshot.
         - Raises InsufficientInventoryError if outbound > balance.
         """
-        item = await self._item_repo.get_by_id(item_id)
+        # Acquire row-level lock before reading balance
+        item = await self._item_repo.get_by_id_locked(item_id)
         if item is None:
             raise NotFoundError("InventoryItem", item_id)
 
@@ -188,14 +197,10 @@ class InventoryService(BaseService):
         if original.status == InventoryMovementStatus.CANCELLED:
             raise BusinessRuleError("Movement is already cancelled")
 
-        # For a VOID_REVERSAL we always use VOID_REVERSAL type.
-        # The direction is determined: inbound original → outbound reversal,
-        # outbound original → inbound reversal.
-        # We handle this by computing balance delta correctly in record_movement.
-        # Since VOID_REVERSAL is not in INBOUND or OUTBOUND sets, we handle
-        # direction explicitly here by calling the item repo directly.
-
-        item = await self._item_repo.get_by_id_or_raise(original.item_id)
+        # Lock the item row before reading balance (same as record_movement)
+        item = await self._item_repo.get_by_id_locked(original.item_id)
+        if item is None:
+            raise NotFoundError("InventoryItem", original.item_id)
 
         # Original inbound movements added to balance → reversal removes from balance.
         # Original outbound movements removed from balance → reversal adds to balance.
@@ -280,6 +285,64 @@ class InventoryService(BaseService):
     async def recalculate_balance(self, item_id: UUID) -> Decimal:
         """Recompute balance from ledger. Use for reconciliation only."""
         return await self._item_repo.recalculate_balance(item_id)
+
+    async def get_item(self, item_id: UUID) -> InventoryItem:
+        """Fetch a single inventory item by ID, raising NotFoundError if missing."""
+        return await self._item_repo.get_by_id_or_raise(item_id)
+
+    async def list_items(
+        self,
+        params,
+        *,
+        item_type: InventoryItemType | None = None,
+        low_stock: bool = False,
+    ) -> tuple[list[InventoryItem], int]:
+        """Paginated list of non-deleted inventory items with optional filters."""
+        from sqlalchemy import and_, select
+        from app.common.utils.pagination import paginate_query
+
+        q = (
+            select(InventoryItem)
+            .where(InventoryItem.deleted_at.is_(None))
+            .order_by(InventoryItem.name)
+        )
+        if item_type is not None:
+            q = q.where(InventoryItem.item_type == item_type)
+        if low_stock:
+            q = q.where(
+                and_(
+                    InventoryItem.reorder_level.is_not(None),
+                    InventoryItem.current_balance <= InventoryItem.reorder_level,
+                )
+            )
+        return await paginate_query(self._session, q, params)
+
+    async def list_movements(
+        self,
+        params,
+        *,
+        item_id: UUID | None = None,
+        movement_type: MovementType | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> tuple[list[InventoryMovement], int]:
+        """Paginated list of inventory movements with optional filters."""
+        from datetime import datetime, timezone
+        from sqlalchemy import select
+        from app.common.utils.pagination import paginate_query
+
+        q = select(InventoryMovement).order_by(InventoryMovement.created_at.desc())
+        if item_id is not None:
+            q = q.where(InventoryMovement.item_id == item_id)
+        if movement_type is not None:
+            q = q.where(InventoryMovement.movement_type == movement_type)
+        if start_date is not None:
+            start_dt = datetime.fromisoformat(f"{start_date}T00:00:00").replace(tzinfo=timezone.utc)
+            q = q.where(InventoryMovement.created_at >= start_dt)
+        if end_date is not None:
+            end_dt = datetime.fromisoformat(f"{end_date}T23:59:59").replace(tzinfo=timezone.utc)
+            q = q.where(InventoryMovement.created_at <= end_dt)
+        return await paginate_query(self._session, q, params)
 
     async def create_item(
         self,

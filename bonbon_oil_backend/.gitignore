@@ -15,10 +15,9 @@ build/
 venv/
 env/
 
-# Environment
+# Environment — ignore all .env variants, keep only the example template
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # IDE
@@ -27,6 +26,8 @@ env/
 *.swp
 *.swo
 .DS_Store
+Thumbs.db
+ehthumbs.db
 
 # Testing
 tests/
@@ -36,12 +37,27 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Alembic
+# Alembic — keep the .gitkeep so the versions/ directory is tracked when empty
 !alembic/versions/.gitkeep
 
 # Logs
 *.log
 /logs/
+
+# Local / temporary databases and dumps (never commit real data)
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.gz
+
+# Sensitive files — never commit private keys or service credentials
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service_account*.json
 
 # Docker
 .docker/
@@ -49,3 +65,8 @@ htmlcov/
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Misc
+.python-version
+pip-log.txt
+*.prof

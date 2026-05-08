@@ -127,6 +127,10 @@ class ExpenseService(BaseService):
         payments = await self._payment_repo.get_by_expense(expense_id)
         return expense, payments
 
+    async def get_payments_for_expense(self, expense_id: UUID) -> list[ExpensePayment]:
+        """Return all payment records for an expense."""
+        return await self._payment_repo.get_by_expense(expense_id)
+
     async def list_expenses(
         self,
         *,
@@ -206,7 +210,7 @@ class ExpenseService(BaseService):
         actor: str,
     ) -> Expense:
         """Approve or reject a PENDING expense."""
-        expense = await self._expense_repo.get_by_id_or_raise(expense_id)
+        expense = await self._expense_repo.get_by_id_for_update_or_raise(expense_id)
         if expense.status not in (ExpenseStatus.PENDING,):
             raise BusinessRuleError(
                 f"Cannot approve/reject expense in status '{expense.status}'. "
@@ -214,12 +218,16 @@ class ExpenseService(BaseService):
             )
 
         new_status = ExpenseStatus.APPROVED if approved else ExpenseStatus.REJECTED
+        expense.bump_version()
+        expense.bump_sync_version()
         return await self._expense_repo.update(
             expense,
             status=new_status,
             approved_by=actor if approved else None,
             notes=notes if notes is not None else expense.notes,
             updated_by=actor,
+            version_number=expense.version_number,
+            sync_version=expense.sync_version,
         )
 
     # Payment
@@ -238,7 +246,7 @@ class ExpenseService(BaseService):
         Creates a double-entry ledger record and sets the expense to PAID.
         Raises BusinessRuleError if the expense is already paid or rejected.
         """
-        expense = await self._expense_repo.get_by_id_or_raise(expense_id)
+        expense = await self._expense_repo.get_by_id_for_update_or_raise(expense_id)
 
         if expense.status == ExpenseStatus.PAID:
             raise BusinessRuleError("Expense is already paid")
@@ -279,7 +287,15 @@ class ExpenseService(BaseService):
             tenant_id=tenant_id,
         )
         saved = await self._payment_repo.create(payment)
-        await self._expense_repo.update(expense, status=ExpenseStatus.PAID, updated_by=actor)
+        expense.bump_version()
+        expense.bump_sync_version()
+        await self._expense_repo.update(
+            expense,
+            status=ExpenseStatus.PAID,
+            updated_by=actor,
+            version_number=expense.version_number,
+            sync_version=expense.sync_version,
+        )
 
         self._logger.info(
             "expense.payment_recorded",

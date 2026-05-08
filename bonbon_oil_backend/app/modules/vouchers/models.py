@@ -26,11 +26,11 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
-from app.database.mixins import FullAuditMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.mixins import FullAuditMixin, OptimisticLockMixin, SyncMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.vouchers.enums import VoucherStatus, VoucherType
 
 
-class Voucher(FullAuditMixin, Base):
+class Voucher(OptimisticLockMixin, SyncMixin, FullAuditMixin, Base):
     __tablename__ = "vouchers"
 
     voucher_number: Mapped[str] = mapped_column(

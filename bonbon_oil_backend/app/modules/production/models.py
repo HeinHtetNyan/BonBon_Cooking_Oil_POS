@@ -27,11 +27,11 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
-from app.database.mixins import FullAuditMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.mixins import FullAuditMixin, OptimisticLockMixin, SyncMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.production.enums import ProductionBatchStatus, ProductionStage
 
 
-class ProductionBatch(FullAuditMixin, Base):
+class ProductionBatch(OptimisticLockMixin, SyncMixin, FullAuditMixin, Base):
     __tablename__ = "production_batches"
 
     batch_number: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)

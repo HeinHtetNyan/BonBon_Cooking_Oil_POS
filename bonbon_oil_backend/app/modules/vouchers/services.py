@@ -37,6 +37,7 @@ from app.common.utils.decimal import ZERO, round_money
 from app.core.exceptions import (
     BusinessRuleError,
     NotFoundError,
+    OptimisticLockError,
     VoucherAlreadyCancelledError,
     VoucherLockedError,
 )
@@ -98,28 +99,51 @@ class VoucherService(BaseService):
 
         return voucher
 
-    async def confirm_voucher(self, voucher_id: UUID, *, actor: str) -> Voucher:
+    async def confirm_voucher(
+        self,
+        voucher_id: UUID,
+        *,
+        actor: str,
+        expected_version: int | None = None,
+    ) -> Voucher:
         """
         Confirm a DRAFT voucher: trigger inventory and ledger effects atomically.
 
         Steps:
-          1. Validate status == DRAFT
-          2. SALE_OUT inventory movements for each line item
-          3. Double-entry journal entries for each payment received
-          4. CustomerDebt if outstanding amount > 0
-          5. Status transition: DRAFT → PAID / PARTIALLY_PAID / CONFIRMED
+          1. Lock voucher row (SELECT ... FOR UPDATE) — prevents concurrent confirmations.
+          2. Re-validate status == DRAFT after lock (prevents TOCTOU race).
+          3. Optimistic lock check if expected_version is provided.
+          4. SALE_OUT inventory movements for each line item.
+          5. Double-entry journal entries for each payment received.
+          6. CustomerDebt if outstanding amount > 0.
+          7. Status transition: DRAFT → PAID / PARTIALLY_PAID / CONFIRMED.
+          8. Bump version_number and sync_version.
         """
-        voucher = await self._voucher_repo.get_with_items_and_payments(voucher_id)
+        # Lock the voucher row to prevent concurrent confirm/void operations
+        voucher = await self._voucher_repo.get_with_items_and_payments_for_update(voucher_id)
         if voucher is None:
             raise NotFoundError("Voucher", voucher_id)
+
+        # Re-check status after acquiring lock — another request may have
+        # confirmed it between our read and the lock acquisition
         if voucher.status != VoucherStatus.DRAFT:
             raise VoucherLockedError
+
+        # Optimistic lock check: client may supply the version they last saw
+        if expected_version is not None and voucher.version_number != expected_version:
+            raise OptimisticLockError("Voucher", expected_version, voucher.version_number)
 
         await self._process_inventory_movements(voucher, actor=actor)
         await self._process_ledger_entries(voucher, actor=actor)
 
         new_status = self._determine_payment_status(voucher)
-        await self._voucher_repo.update(voucher, status=new_status, updated_by=actor)
+        voucher.bump_version()
+        voucher.bump_sync_version()
+        await self._voucher_repo.update(
+            voucher, status=new_status, updated_by=actor,
+            version_number=voucher.version_number,
+            sync_version=voucher.sync_version,
+        )
 
         if voucher.outstanding_amount > ZERO:
             await self._create_customer_debt_if_needed(voucher, actor=actor)
@@ -139,19 +163,27 @@ class VoucherService(BaseService):
         reason: str,
         *,
         actor: str,
+        expected_version: int | None = None,
     ) -> Voucher:
         """
         Void (cancel) a voucher and reverse all its effects.
+
+        Acquires a row-level lock before status check to prevent concurrent
+        void operations from creating duplicate reversals.
 
         - DRAFT voucher: simply marks CANCELLED; no ledger/inventory effects exist yet.
         - CONFIRMED/PARTIALLY_PAID/PAID: reverses all inventory movements and journal
           entries, then cancels any associated CustomerDebt (unless already PAID).
         """
-        voucher = await self._voucher_repo.get_with_items_and_payments(voucher_id)
+        # Lock before reading state (prevents duplicate void race)
+        voucher = await self._voucher_repo.get_with_items_and_payments_for_update(voucher_id)
         if voucher is None:
             raise NotFoundError("Voucher", voucher_id)
         if voucher.status == VoucherStatus.CANCELLED:
             raise VoucherAlreadyCancelledError
+
+        if expected_version is not None and voucher.version_number != expected_version:
+            raise OptimisticLockError("Voucher", expected_version, voucher.version_number)
 
         if voucher.status != VoucherStatus.DRAFT:
             # Reverse inventory movements
@@ -179,8 +211,14 @@ class VoucherService(BaseService):
             # Cancel associated CustomerDebt (if any and not already terminal)
             await self._cancel_voucher_debt(voucher_id, reason=reason, actor=actor)
 
+        voucher.bump_version()
+        voucher.bump_sync_version()
         updated = await self._voucher_repo.update(
-            voucher, status=VoucherStatus.CANCELLED, updated_by=actor
+            voucher,
+            status=VoucherStatus.CANCELLED,
+            updated_by=actor,
+            version_number=voucher.version_number,
+            sync_version=voucher.sync_version,
         )
         self._logger.info(
             "voucher.voided",

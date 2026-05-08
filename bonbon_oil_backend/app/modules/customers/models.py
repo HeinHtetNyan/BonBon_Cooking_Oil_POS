@@ -8,11 +8,11 @@ from sqlalchemy import Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
-from app.database.mixins import FullAuditMixin
+from app.database.mixins import FullAuditMixin, OptimisticLockMixin, SyncMixin
 from app.modules.customers.enums import CustomerStatus, CustomerType
 
 
-class Customer(FullAuditMixin, Base):
+class Customer(OptimisticLockMixin, SyncMixin, FullAuditMixin, Base):
     __tablename__ = "customers"
 
     code: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)

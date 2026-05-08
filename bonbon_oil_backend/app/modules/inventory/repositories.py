@@ -20,8 +20,26 @@ class InventoryItemRepository(BaseRepository[InventoryItem]):
         result = await self._session.execute(q)
         return result.scalar_one_or_none()
 
+    async def get_by_id_locked(self, item_id: UUID) -> InventoryItem | None:
+        """
+        Fetch inventory item with SELECT ... FOR UPDATE.
+
+        All outbound movements must call this before checking stock to
+        prevent concurrent writes from racing past the balance check.
+        """
+        q = (
+            self._base_query()
+            .where(InventoryItem.id == item_id)
+            .with_for_update()
+        )
+        result = await self._session.execute(q)
+        return result.scalar_one_or_none()
+
     async def update_balance(self, item: InventoryItem, delta: Decimal) -> InventoryItem:
-        """Atomically adjust the denormalized balance."""
+        """Atomically adjust the denormalized balance.
+
+        Caller MUST have locked the item row via get_by_id_locked() first.
+        """
         item.current_balance += delta
         await self._session.flush()
         await self._session.refresh(item)

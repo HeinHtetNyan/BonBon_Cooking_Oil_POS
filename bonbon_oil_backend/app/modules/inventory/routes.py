@@ -38,27 +38,9 @@ async def list_inventory_items(
     item_type: InventoryItemType | None = Query(default=None),
     low_stock: bool = Query(default=False, description="Filter to low-stock items only"),
 ) -> PaginatedResponse[InventoryItemResponse]:
-    from sqlalchemy import select
-    from app.modules.inventory.models import InventoryItem
-    from app.common.utils.pagination import paginate_query
-
-    q = (
-        select(InventoryItem)
-        .where(InventoryItem.deleted_at.is_(None))
-        .order_by(InventoryItem.name)
+    items, total = await service.list_items(
+        pagination, item_type=item_type, low_stock=low_stock
     )
-    if item_type is not None:
-        q = q.where(InventoryItem.item_type == item_type)
-    if low_stock:
-        from sqlalchemy import and_
-        q = q.where(
-            and_(
-                InventoryItem.reorder_level.is_not(None),
-                InventoryItem.current_balance <= InventoryItem.reorder_level,
-            )
-        )
-
-    items, total = await paginate_query(service._session, q, pagination)
     return paginated(
         [InventoryItemResponse.model_validate(i) for i in items],
         page=pagination.page,
@@ -97,7 +79,7 @@ async def get_inventory_item(
     service: Annotated[InventoryService, Depends(get_inventory_service)],
     _current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> SuccessResponse[InventoryItemResponse]:
-    item = await service._item_repo.get_by_id_or_raise(item_id)
+    item = await service.get_item(item_id)
     return ok(InventoryItemResponse.model_validate(item))
 
 
@@ -140,28 +122,13 @@ async def list_movements(
     start_date: str | None = Query(default=None, description="YYYY-MM-DD"),
     end_date: str | None = Query(default=None, description="YYYY-MM-DD"),
 ) -> PaginatedResponse[MovementResponse]:
-    from sqlalchemy import select
-    from app.modules.inventory.models import InventoryMovement
-    from app.common.utils.pagination import paginate_query
-
-    q = (
-        select(InventoryMovement)
-        .order_by(InventoryMovement.created_at.desc())
+    movements, total = await service.list_movements(
+        pagination,
+        item_id=item_id,
+        movement_type=movement_type,
+        start_date=start_date,
+        end_date=end_date,
     )
-    if item_id is not None:
-        q = q.where(InventoryMovement.item_id == item_id)
-    if movement_type is not None:
-        q = q.where(InventoryMovement.movement_type == movement_type)
-    if start_date is not None:
-        from datetime import datetime, timezone
-        start_dt = datetime.fromisoformat(f"{start_date}T00:00:00").replace(tzinfo=timezone.utc)
-        q = q.where(InventoryMovement.created_at >= start_dt)
-    if end_date is not None:
-        from datetime import datetime, timezone
-        end_dt = datetime.fromisoformat(f"{end_date}T23:59:59").replace(tzinfo=timezone.utc)
-        q = q.where(InventoryMovement.created_at <= end_dt)
-
-    movements, total = await paginate_query(service._session, q, pagination)
     return paginated(
         [MovementResponse.model_validate(m) for m in movements],
         page=pagination.page,

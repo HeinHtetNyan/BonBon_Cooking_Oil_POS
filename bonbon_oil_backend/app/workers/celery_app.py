@@ -26,6 +26,9 @@ celery_app = Celery(
         "app.workers.tasks.audit_tasks",
         "app.workers.tasks.report_tasks",
         "app.workers.tasks.inventory_tasks",
+        "app.workers.tasks.snapshot_tasks",
+        "app.workers.tasks.reconciliation_tasks",
+        "app.workers.tasks.cleanup_tasks",
     ],
 )
 
@@ -68,14 +71,55 @@ celery_app.conf.task_default_routing_key = "default"
 
 # Scheduled Tasks
 celery_app.conf.beat_schedule = {
+    # Snapshots
     "daily-inventory-snapshot": {
-        "task": "app.workers.tasks.inventory_tasks.create_daily_snapshot",
+        "task": "snapshots.create_daily_inventory_snapshot",
         "schedule": crontab(hour=0, minute=5),
         "options": {"queue": "reports"},
     },
-    "daily-financial-summary": {
-        "task": "app.workers.tasks.report_tasks.generate_daily_summary",
+    "daily-financial-snapshot": {
+        "task": "snapshots.create_daily_financial_snapshot",
         "schedule": crontab(hour=0, minute=10),
         "options": {"queue": "reports"},
+    },
+    "monthly-financial-snapshot": {
+        "task": "snapshots.create_monthly_financial_snapshot",
+        # Run on the 1st of each month at 01:00 UTC (captures last day of previous month)
+        "schedule": crontab(hour=1, minute=0, day_of_month=1),
+        "options": {"queue": "reports"},
+    },
+    # Daily report summary
+    "daily-financial-summary": {
+        "task": "reports.generate_daily_summary",
+        "schedule": crontab(hour=0, minute=15),
+        "options": {"queue": "reports"},
+    },
+    # Reconciliation checks (2:00 AM daily — after snapshots)
+    "daily-inventory-consistency-check": {
+        "task": "reconciliation.check_inventory_consistency",
+        "schedule": crontab(hour=2, minute=0),
+        "options": {"queue": "reports"},
+    },
+    "daily-financial-integrity-check": {
+        "task": "reconciliation.check_financial_integrity",
+        "schedule": crontab(hour=2, minute=15),
+        "options": {"queue": "reports"},
+    },
+    "daily-orphaned-record-check": {
+        "task": "reconciliation.check_orphaned_records",
+        "schedule": crontab(hour=2, minute=30),
+        "options": {"queue": "reports"},
+    },
+    # Cleanup (3:00 AM daily)
+    "cleanup-expired-idempotency-keys": {
+        "task": "cleanup.expired_idempotency_keys",
+        "schedule": crontab(hour=3, minute=0),
+        "options": {"queue": "default"},
+    },
+    "cleanup-old-change-events": {
+        # Weekly on Sunday at 3:30 AM
+        "task": "cleanup.old_change_events",
+        "schedule": crontab(hour=3, minute=30, day_of_week=0),
+        "options": {"queue": "default"},
     },
 }

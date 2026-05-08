@@ -28,7 +28,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
-from app.database.mixins import FullAuditMixin, TimestampMixin, UUIDPrimaryKeyMixin
+from app.database.mixins import FullAuditMixin, OptimisticLockMixin, SyncMixin, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.inventory.enums import (
     InventoryItemType,
     InventoryMovementStatus,
@@ -37,7 +37,7 @@ from app.modules.inventory.enums import (
 )
 
 
-class InventoryItem(FullAuditMixin, Base):
+class InventoryItem(OptimisticLockMixin, FullAuditMixin, Base):
     """
     Catalog entry for a stockable item.
 
@@ -75,7 +75,7 @@ class InventoryItem(FullAuditMixin, Base):
         return self.current_balance <= self.reorder_level
 
 
-class InventoryMovement(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+class InventoryMovement(SyncMixin, UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """
     Append-only ledger entry for one inventory movement.
 

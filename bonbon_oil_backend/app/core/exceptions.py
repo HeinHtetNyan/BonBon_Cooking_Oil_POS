@@ -187,3 +187,49 @@ class RateLimitError(AppError):
     status_code = HTTPStatus.TOO_MANY_REQUESTS
     error_code = "rate_limit_exceeded"
     message = "Too many requests — please slow down"
+
+
+# Concurrency Errors
+
+class OptimisticLockError(AppError):
+    status_code = HTTPStatus.CONFLICT
+    error_code = "optimistic_lock_conflict"
+    message = "The record was modified by another request — please reload and retry"
+
+    def __init__(self, resource: str, expected: int, actual: int) -> None:
+        super().__init__(
+            message=(
+                f"{resource} version conflict: expected {expected}, "
+                f"got {actual}. Reload and retry."
+            ),
+            context={"resource": resource, "expected": expected, "actual": actual},
+        )
+
+
+class IdempotencyConflictError(AppError):
+    status_code = HTTPStatus.CONFLICT
+    error_code = "idempotency_conflict"
+    message = (
+        "An idempotency key was reused with a different request body. "
+        "Use a new key for a different operation."
+    )
+
+
+class DeadlockError(AppError):
+    status_code = HTTPStatus.CONFLICT
+    error_code = "deadlock_detected"
+    message = "A database deadlock was detected — please retry the operation"
+
+
+# Reconciliation / Integrity Errors
+
+class IntegrityCheckError(AppError):
+    status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+    error_code = "integrity_check_failed"
+    message = "A data integrity check detected an inconsistency"
+
+    def __init__(self, details: list[str]) -> None:
+        super().__init__(
+            message=f"Integrity check failed: {len(details)} issue(s) detected",
+            context={"issues": details},
+        )

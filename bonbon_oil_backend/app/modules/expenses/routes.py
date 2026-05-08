@@ -79,7 +79,7 @@ async def list_expenses(
     )
     items = []
     for expense in expenses:
-        payments = await service._payment_repo.get_by_expense(expense.id)
+        payments = await service.get_payments_for_expense(expense.id)
         items.append(_to_response(expense, payments))
     return paginated(items, page=page, per_page=per_page, total=total)
 
@@ -100,7 +100,7 @@ async def create_expense(
         actor=str(current_user.id),
         tenant_id=getattr(current_user, "tenant_id", "default"),
     )
-    payments = await service._payment_repo.get_by_expense(expense.id)
+    payments = await service.get_payments_for_expense(expense.id)
     return ok(_to_response(expense, payments))
 
 
@@ -129,7 +129,7 @@ async def update_expense(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> SuccessResponse[ExpenseResponse]:
     expense = await service.update_expense(expense_id, data, actor=str(current_user.id))
-    payments = await service._payment_repo.get_by_expense(expense.id)
+    payments = await service.get_payments_for_expense(expense.id)
     return ok(_to_response(expense, payments))
 
 
@@ -150,7 +150,7 @@ async def approve_expense(
         notes=data.notes,
         actor=str(current_user.id),
     )
-    payments = await service._payment_repo.get_by_expense(expense.id)
+    payments = await service.get_payments_for_expense(expense.id)
     return ok(_to_response(expense, payments))
 
 

@@ -53,6 +53,46 @@ class BaseRepository(Generic[ModelT]):
         result = await self._session.execute(q)
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(
+        self,
+        record_id: UUID,
+        *,
+        include_deleted: bool = False,
+    ) -> ModelT | None:
+        """
+        Fetch a record and lock its row with SELECT ... FOR UPDATE.
+
+        Use this at the start of any write operation that reads the record
+        first and makes decisions based on its current state (e.g., balance
+        checks, status transitions). The lock is held until the enclosing
+        transaction commits or rolls back, preventing concurrent writers
+        from seeing inconsistent intermediate state.
+
+        IMPORTANT: only call this from within an open transaction. FastAPI
+        routes run inside a per-request transaction managed by get_db_session.
+        """
+        q = (
+            self._base_query(include_deleted)
+            .where(self.model.id == record_id)  # type: ignore[attr-defined]
+            .with_for_update()
+        )
+        result = await self._session.execute(q)
+        return result.scalar_one_or_none()
+
+    async def get_by_id_for_update_or_raise(
+        self,
+        record_id: UUID,
+        *,
+        include_deleted: bool = False,
+    ) -> ModelT:
+        """Locked read that raises NotFoundError if missing."""
+        from app.core.exceptions import NotFoundError
+
+        record = await self.get_by_id_for_update(record_id, include_deleted=include_deleted)
+        if record is None:
+            raise NotFoundError(self.model.__name__, record_id)
+        return record
+
     async def get_by_id_or_raise(
         self,
         record_id: UUID,

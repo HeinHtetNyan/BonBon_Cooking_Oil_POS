@@ -422,7 +422,9 @@ class DebtService(BaseService):
 
         Returns (DebtPayment, updated CustomerDebt).
         """
-        debt = await self._debt_repo.get_by_id_or_raise(debt_id)
+        # Row-level lock: prevents concurrent payments from both passing the
+        # "amount <= outstanding" check and together exceeding the debt balance.
+        debt = await self._debt_repo.get_by_id_for_update_or_raise(debt_id)
 
         if debt.status == DebtStatus.PAID:
             raise BusinessRuleError("This debt is already fully paid")
@@ -505,7 +507,7 @@ class DebtService(BaseService):
         A PAID debt cannot be written off — the money has already been received.
         An OUTSTANDING or PARTIALLY_PAID debt can be written off at any time.
         """
-        debt = await self._debt_repo.get_by_id_or_raise(debt_id)
+        debt = await self._debt_repo.get_by_id_for_update_or_raise(debt_id)
 
         if debt.status == DebtStatus.PAID:
             raise BusinessRuleError("Cannot cancel a fully paid debt")
@@ -563,7 +565,7 @@ class DebtService(BaseService):
         from app.modules.customers.models import Customer
 
         result = await self._session.execute(
-            select(Customer).where(Customer.id == customer_id)
+            select(Customer).where(Customer.id == customer_id).with_for_update()
         )
         customer = result.scalar_one_or_none()
         if customer is not None:

@@ -92,11 +92,15 @@ class CustomerService(BaseService):
 
     async def deactivate_customer(self, customer_id: UUID, *, actor: str) -> Customer:
         """Set customer status to INACTIVE (soft-delete equivalent)."""
-        customer = await self.get_customer(customer_id)
+        customer = await self._repo.get_by_id_for_update_or_raise(customer_id)
+        customer.bump_version()
+        customer.bump_sync_version()
         return await self._repo.update(
             customer,
             status=CustomerStatus.INACTIVE,
             updated_by=actor,
+            version_number=customer.version_number,
+            sync_version=customer.sync_version,
         )
 
     async def list_customers(

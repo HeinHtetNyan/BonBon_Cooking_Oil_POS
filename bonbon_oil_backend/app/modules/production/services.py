@@ -119,7 +119,7 @@ class ProductionBatchService(BaseService):
 
     async def start_batch(self, batch_id: UUID, *, actor: str) -> ProductionBatch:
         """Transition PLANNED → IN_PROGRESS."""
-        batch = await self._batch_repo.get_by_id_or_raise(batch_id)
+        batch = await self._batch_repo.get_by_id_for_update_or_raise(batch_id)
         if batch.status != ProductionBatchStatus.PLANNED:
             raise BusinessRuleError(
                 f"Cannot start batch in status '{batch.status}'. Must be PLANNED."
@@ -127,11 +127,15 @@ class ProductionBatchService(BaseService):
 
         from app.common.utils.datetime import utcnow
 
+        batch.bump_version()
+        batch.bump_sync_version()
         return await self._batch_repo.update(
             batch,
             status=ProductionBatchStatus.IN_PROGRESS,
             start_date=utcnow().date().isoformat(),
             updated_by=actor,
+            version_number=batch.version_number,
+            sync_version=batch.sync_version,
         )
 
     async def complete_batch(
@@ -157,7 +161,7 @@ class ProductionBatchService(BaseService):
         """
         from app.common.utils.datetime import utcnow
 
-        batch = await self._batch_repo.get_with_usages(batch_id)
+        batch = await self._batch_repo.get_with_usages_for_update(batch_id)
         if batch is None:
             raise NotFoundError("ProductionBatch", batch_id)
         if batch.status != ProductionBatchStatus.IN_PROGRESS:
@@ -232,6 +236,8 @@ class ProductionBatchService(BaseService):
             total_actual_output += qty
 
         # 3. Finalise batch
+        batch.bump_version()
+        batch.bump_sync_version()
         completed_batch = await self._batch_repo.update(
             batch,
             status=ProductionBatchStatus.COMPLETED,
@@ -242,6 +248,8 @@ class ProductionBatchService(BaseService):
             end_date=utcnow().date().isoformat(),
             completed_at=utcnow(),
             updated_by=actor,
+            version_number=batch.version_number,
+            sync_version=batch.sync_version,
         )
 
         self._logger.info(
@@ -267,7 +275,7 @@ class ProductionBatchService(BaseService):
         - IN_PROGRESS → reverses all inventory movements, then CANCELLED.
         - COMPLETED or already CANCELLED → raises BusinessRuleError.
         """
-        batch = await self._batch_repo.get_by_id_or_raise(batch_id)
+        batch = await self._batch_repo.get_by_id_for_update_or_raise(batch_id)
 
         if batch.status == ProductionBatchStatus.COMPLETED:
             raise BusinessRuleError("Cannot cancel a completed batch")
@@ -284,12 +292,16 @@ class ProductionBatchService(BaseService):
 
         from app.common.utils.datetime import utcnow
 
+        batch.bump_version()
+        batch.bump_sync_version()
         cancelled_batch = await self._batch_repo.update(
             batch,
             status=ProductionBatchStatus.CANCELLED,
             cancelled_at=utcnow(),
             cancellation_reason=reason,
             updated_by=actor,
+            version_number=batch.version_number,
+            sync_version=batch.sync_version,
         )
 
         self._logger.info(

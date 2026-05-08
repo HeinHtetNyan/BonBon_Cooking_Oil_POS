@@ -33,6 +33,37 @@ class VoucherRepository(BaseRepository[Voucher]):
         result = await self._session.execute(q)
         return result.scalar_one_or_none()
 
+    async def get_with_items_and_payments_for_update(self, voucher_id: UUID) -> Voucher | None:
+        """
+        Lock the voucher row and eagerly load items + payments.
+
+        Two-phase approach:
+        1. Lock the header row with SELECT ... FOR UPDATE (prevents concurrent
+           confirm/void operations on the same voucher).
+        2. selectinload items + payments in a separate query (selectinload
+           cannot be combined with with_for_update in SQLAlchemy).
+
+        The transaction isolation ensures items/payments loaded immediately
+        after the lock are consistent with the locked header state.
+        """
+        from sqlalchemy.orm import selectinload
+
+        # Phase 1: lock header row
+        lock_q = (
+            select(Voucher)
+            .where(Voucher.id == voucher_id)
+            .where(Voucher.deleted_at.is_(None))
+            .with_for_update()
+        )
+        result = await self._session.execute(lock_q)
+        voucher = result.scalar_one_or_none()
+        if voucher is None:
+            return None
+
+        # Phase 2: load relationships (separate queries, consistent within transaction)
+        await self._session.refresh(voucher, attribute_names=["items", "payments"])
+        return voucher
+
     async def next_voucher_number(self, prefix: str = "INV") -> str:
         """Generate next sequential voucher number."""
         from sqlalchemy import func
