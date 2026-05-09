@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment — ignore all .env variants, keep only the example template
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Alembic — keep the .gitkeep so the versions/ directory is tracked when empty
+!alembic/versions/.gitkeep
+
+# Logs
+*.log
+/logs/
+
+# Local / temporary databases and dumps (never commit real data)
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.gz
+
+# Sensitive files — never commit private keys or service credentials
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service_account*.json
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Misc
+.python-version
+pip-log.txt
+*.prof

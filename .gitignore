@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+/logs/
+
+# Sensitive — belt-and-suspenders catch-all at repo root
+.env
+.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service_account*.json
+
+# Claude Code project state
+.claude/

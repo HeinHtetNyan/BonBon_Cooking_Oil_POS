@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dark navy background */
+  --color-background: oklch(0.129 0.042 264.695);
+  --color-foreground: oklch(0.984 0.003 264.5);
+
+  --color-card: oklch(0.208 0.042 265.8);
+  --color-card-foreground: oklch(0.984 0.003 264.5);
+
+  --color-popover: oklch(0.208 0.042 265.8);
+  --color-popover-foreground: oklch(0.984 0.003 264.5);
+
+  /* Amber / gold primary */
+  --color-primary: oklch(0.769 0.189 76.427);
+  --color-primary-foreground: oklch(0.129 0.042 264.695);
+
+  --color-secondary: oklch(0.279 0.041 260.031);
+  --color-secondary-foreground: oklch(0.984 0.003 264.5);
+
+  --color-muted: oklch(0.248 0.038 262.0);
+  --color-muted-foreground: oklch(0.622 0.038 265.938);
+
+  --color-accent: oklch(0.279 0.041 260.031);
+  --color-accent-foreground: oklch(0.984 0.003 264.5);
+
+  --color-destructive: oklch(0.577 0.245 27.325);
+
+  --color-border: oklch(0.279 0.041 260.031);
+  --color-input: oklch(0.248 0.038 262.0);
+  --color-ring: oklch(0.769 0.189 76.427);
+
+  /* Sidebar — slightly darker than card */
+  --color-sidebar: oklch(0.168 0.042 264.0);
+  --color-sidebar-foreground: oklch(0.748 0.026 264.4);
+  --color-sidebar-border: oklch(0.279 0.041 260.031);
+  --color-sidebar-muted: oklch(0.248 0.038 262.0);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { height: 100vh; display: flex; flex-direction: column; }
+}
