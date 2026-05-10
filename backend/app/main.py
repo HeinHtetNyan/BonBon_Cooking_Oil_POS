@@ -91,7 +91,9 @@ def _register_middleware(app: FastAPI) -> None:
     from app.middleware.timing import TimingMiddleware
     from app.middleware.request_id import RequestIDMiddleware
     from app.middleware.audit import AuditLogMiddleware
+    from app.middleware.idempotency import IdempotencyMiddleware
 
+    app.add_middleware(IdempotencyMiddleware)
     app.add_middleware(AuditLogMiddleware)
     app.add_middleware(TimingMiddleware)
     app.add_middleware(RequestIDMiddleware)

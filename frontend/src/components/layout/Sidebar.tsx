@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard, FileText, Users, Package, Factory,
-  Receipt, BarChart3, UserCog, ChevronLeft, Droplets, X,
+  Receipt, BarChart3, UserCog, ChevronLeft, X, Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui";
@@ -19,6 +19,7 @@ const navItems = [
   { to: "/expenses",  icon: Receipt,         key: "nav.expenses",      roles: [] },
   { to: "/reports",   icon: BarChart3,       key: "nav.reports",       roles: ["accountant","manager","admin","super_admin"] },
   { to: "/users",     icon: UserCog,         key: "nav.users",         roles: ["admin","super_admin","manager"] },
+  { to: "/audit",     icon: Shield,          key: "nav.auditLog",      roles: ["super_admin"] },
 ];
 
 interface SidebarProps {
@@ -46,8 +47,8 @@ export function Sidebar({ onMobileClose }: SidebarProps) {
     )}>
       {/* Logo + close button */}
       <div className="flex items-center gap-3 px-4 h-14 shrink-0 border-b border-sidebar-border">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary shrink-0">
-          <Droplets className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg overflow-hidden shrink-0">
+          <img src="/logo.jpg" alt="Bon Bon Oil" className="w-full h-full object-cover" />
         </div>
         <div className={cn("overflow-hidden flex-1 min-w-0", !sidebarOpen && "lg:hidden")}>
           <p className="text-sm font-bold text-white truncate">Bon Bon Oil</p>

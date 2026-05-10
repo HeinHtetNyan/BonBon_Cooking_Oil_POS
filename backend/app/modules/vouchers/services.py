@@ -61,7 +61,12 @@ class VoucherService(BaseService):
     # Public API
 
     async def create_voucher(self, data: VoucherCreate, *, actor: str) -> Voucher:
-        """Create a DRAFT voucher with items and optional upfront payments."""
+        """Create a DRAFT voucher with items and optional upfront payments.
+
+        When `data.auto_confirm=True`, the voucher is confirmed within the same
+        transaction, avoiding the commit-timing race that causes an immediate
+        /confirm call to return 404.
+        """
         import json
 
         voucher_number = await self._voucher_repo.next_voucher_number()
@@ -97,8 +102,14 @@ class VoucherService(BaseService):
 
         await self._recalculate_totals(voucher, items)
 
+        payments: list[VoucherPayment] = []
         if data.payments:
-            await self._add_payments(voucher, data.payments, actor=actor)
+            payments = await self._add_payments(voucher, data.payments, actor=actor)
+
+        if data.auto_confirm:
+            voucher.items = items
+            voucher.payments = payments
+            await self._run_confirm_in_place(voucher, actor=actor)
 
         return voucher
 
@@ -151,6 +162,11 @@ class VoucherService(BaseService):
 
         if voucher.outstanding_amount > ZERO:
             await self._create_customer_debt_if_needed(voucher, actor=actor)
+
+        # If customer overpaid this voucher, apply the excess to their oldest outstanding debts
+        excess = max(ZERO, voucher.paid_amount - voucher.total_amount)
+        if excess > ZERO and voucher.customer_id:
+            await self._apply_excess_to_customer_debts(voucher.customer_id, excess, actor=actor)
 
         self._logger.info(
             "voucher.confirmed",
@@ -370,6 +386,11 @@ class VoucherService(BaseService):
         # Also update the linked customer debt if any
         await self._apply_payment_to_debt(voucher_id, data.amount, actor=actor)
 
+        # If payment exceeded this voucher's balance, apply the excess to other customer debts
+        excess = max(ZERO, voucher.paid_amount - voucher.total_amount)
+        if excess > ZERO and voucher.customer_id:
+            await self._apply_excess_to_customer_debts(voucher.customer_id, excess, actor=actor)
+
         return await self.get_voucher(voucher_id)
 
     async def _apply_payment_to_debt(self, voucher_id: UUID, amount: Decimal, *, actor: str) -> None:
@@ -502,8 +523,9 @@ class VoucherService(BaseService):
         payment_data: list[VoucherPaymentCreate],
         *,
         actor: str,
-    ) -> None:
+    ) -> list[VoucherPayment]:
         total_paid = ZERO
+        payments: list[VoucherPayment] = []
         for pd in payment_data:
             payment = VoucherPayment(
                 voucher_id=voucher.id,
@@ -514,10 +536,49 @@ class VoucherService(BaseService):
                 actor=actor,
             )
             await self._payment_repo.create(payment)
+            payments.append(payment)
             total_paid += pd.amount
 
         voucher.paid_amount = round_money(total_paid)
         await self._session.flush()
+        return payments
+
+    async def _run_confirm_in_place(self, voucher: Voucher, *, actor: str) -> None:
+        """Confirm a freshly-created DRAFT voucher that has items/payments already set.
+
+        Called from create_voucher when auto_confirm=True. No SELECT FOR UPDATE
+        is needed because the voucher was just created in this same transaction —
+        no other session can see it yet.
+        """
+        await self._process_inventory_movements(voucher, actor=actor)
+        await self._process_ledger_entries(voucher, actor=actor)
+
+        new_status = self._determine_payment_status(voucher)
+        voucher.bump_version()
+        voucher.bump_sync_version()
+        await self._voucher_repo.update(
+            voucher,
+            status=new_status,
+            updated_by=actor,
+            version_number=voucher.version_number,
+            sync_version=voucher.sync_version,
+        )
+
+        if voucher.outstanding_amount > ZERO:
+            await self._create_customer_debt_if_needed(voucher, actor=actor)
+
+        # If customer overpaid this voucher, apply the excess to their oldest outstanding debts
+        excess = max(ZERO, voucher.paid_amount - voucher.total_amount)
+        if excess > ZERO and voucher.customer_id:
+            await self._apply_excess_to_customer_debts(voucher.customer_id, excess, actor=actor)
+
+        self._logger.info(
+            "voucher.confirmed",
+            voucher_id=str(voucher.id),
+            voucher_number=voucher.voucher_number,
+            total=str(voucher.total_amount),
+            status=new_status,
+        )
 
     async def _process_inventory_movements(
         self,
@@ -604,6 +665,53 @@ class VoucherService(BaseService):
                 actor=actor,
                 tenant_id=voucher.tenant_id,
             )
+
+    async def _apply_excess_to_customer_debts(
+        self, customer_id: UUID, excess: Decimal, *, actor: str
+    ) -> None:
+        """Apply overpayment excess to the customer's oldest outstanding debts."""
+        from sqlalchemy import update as sa_update, func as sa_func
+        from app.modules.finance.repositories import CustomerDebtRepository
+        from app.modules.finance.enums import DebtStatus
+        from app.modules.finance.models import CustomerDebt
+        from app.modules.customers.models import Customer
+
+        debt_repo = CustomerDebtRepository(self._session)
+        all_debts = await debt_repo.get_by_customer(customer_id)
+        # oldest first
+        outstanding_debts = [
+            d for d in reversed(all_debts)
+            if d.status in (DebtStatus.OUTSTANDING, DebtStatus.PARTIALLY_PAID)
+        ]
+
+        remaining = excess
+        total_applied = ZERO
+        for debt in outstanding_debts:
+            if remaining <= ZERO:
+                break
+            debt_remaining = debt.original_amount - debt.paid_amount
+            apply = min(remaining, debt_remaining)
+            new_paid = round_money(debt.paid_amount + apply)
+            new_status = DebtStatus.PAID if new_paid >= debt.original_amount else DebtStatus.PARTIALLY_PAID
+            await self._session.execute(
+                sa_update(CustomerDebt).where(CustomerDebt.id == debt.id).values(
+                    paid_amount=new_paid,
+                    status=new_status,
+                    updated_by=actor,
+                )
+            )
+            remaining -= apply
+            total_applied += apply
+
+        if total_applied > ZERO:
+            await self._session.execute(
+                sa_update(Customer).where(Customer.id == customer_id).values(
+                    credit_balance=sa_func.greatest(
+                        Decimal("0"), Customer.credit_balance - total_applied
+                    )
+                )
+            )
+        await self._session.flush()
 
     async def _create_customer_debt_if_needed(
         self,

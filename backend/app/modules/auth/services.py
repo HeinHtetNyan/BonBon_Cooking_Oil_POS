@@ -169,6 +169,7 @@ class AuthService(BaseService):
         access_token = create_access_token(
             subject=user.id,
             roles=[user.role],
+            extra={"username": user.username},
         )
         refresh_token = create_refresh_token(subject=user.id)
         return TokenResponse(

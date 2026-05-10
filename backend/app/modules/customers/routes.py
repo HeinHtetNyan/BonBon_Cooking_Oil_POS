@@ -41,8 +41,14 @@ async def list_customers(
         customer_type=customer_type,
         status=customer_status,
     )
+    debt_totals = await service.get_outstanding_debt_totals([c.id for c in customers])
+    responses: list[CustomerResponse] = []
+    for c in customers:
+        resp = CustomerResponse.model_validate(c)
+        resp.total_debt = debt_totals.get(c.id, resp.total_debt)
+        responses.append(resp)
     return paginated(
-        [CustomerResponse.model_validate(c) for c in customers],
+        responses,
         page=pagination.page,
         per_page=pagination.per_page,
         total=total,

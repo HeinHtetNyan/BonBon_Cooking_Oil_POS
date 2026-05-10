@@ -8,6 +8,7 @@
     "expenses": "ကုန်ကျစရိတ်",
     "reports": "အစီရင်ခံစာ",
     "users": "သုံးစွဲသူများ",
+    "auditLog": "စစ်ဆေးမှတ်တမ်း",
     "erpSystem": "ERP စနစ်"
   },
   "common": {
@@ -102,7 +103,12 @@
     "customerNotFound": "ဖောက်သည်မတွေ့ပါ",
     "retail": "လက်လီ",
     "wholesale": "လက်ကား",
-    "distributor": "ဖြန့်ချိသူ"
+    "distributor": "ဖြန့်ချိသူ",
+    "outstandingDebts": "ကျန်ရှိသောကြွေးမြီများ",
+    "originalAmount": "မူလပမာဏ",
+    "paidAmount": "ပေးချေသောပမာဏ",
+    "writeOff": "ဖျက်သိမ်းမည်",
+    "debtWrittenOff": "ကြွေးမြီ ဖျက်သိမ်းပြီးပါပြီ"
   },
   "vouchers": {
     "title": "ရောင်းချဘောင်ချာများ",
@@ -293,6 +299,23 @@
     "manager": "မန်နေဂျာ",
     "cashier": "ငွေကိုင်",
     "warehouse": "သိုလှောင်ရုံ"
+  },
+  "audit": {
+    "title": "စစ်ဆေးမှတ်တမ်း",
+    "subtitle": "စနစ်တွင် ဆောင်ရွက်ခဲ့သည့် လုပ်ဆောင်ချက်အားလုံး၏ မှတ်တမ်း",
+    "filters": "စစ်ထုတ်မှုများ",
+    "filterAction": "လုပ်ဆောင်ချက်/လမ်းကြောင်းဖြင့် စစ်ထုတ်",
+    "filterActor": "ဆောင်ရွက်သူ (အသုံးပြုသူ ID) ဖြင့် စစ်ထုတ်",
+    "actorIdPlaceholder": "အသုံးပြုသူ ID...",
+    "clearFilters": "ဖယ်ရှားမည်",
+    "time": "အချိန်",
+    "actor": "ဆောင်ရွက်သူ",
+    "action": "လုပ်ဆောင်ချက်",
+    "status": "အခြေအနေ",
+    "duration": "ကြာချိန်",
+    "ipAddress": "IP လိပ်စာ",
+    "before": "မတိုင်မီ",
+    "after": "ပြီးနောက်"
   },
   "users": {
     "title": "သုံးစွဲသူများ",

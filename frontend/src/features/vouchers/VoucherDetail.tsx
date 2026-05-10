@@ -346,7 +346,7 @@ export function VoucherDetail() {
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">{t("vouchers.outstanding")}</p>
-            <p className="text-lg font-bold text-orange-600">{formatCurrency(voucher.outstanding_amount)}</p>
+            <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.max(0, Number(voucher.outstanding_amount)))}</p>
           </CardContent>
         </Card>
       </div>

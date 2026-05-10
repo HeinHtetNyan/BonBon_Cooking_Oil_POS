@@ -191,3 +191,32 @@ class CustomerService(BaseService):
     async def search_customers(self, query: str, limit: int = 20) -> list[Customer]:
         """Quick search across name, phone, and code."""
         return await self._repo.search_by_name(query, limit=limit)
+
+    async def get_outstanding_debt_totals(
+        self, customer_ids: list[UUID]
+    ) -> dict[UUID, Decimal]:
+        """Return outstanding debt per customer for a batch of IDs (single query)."""
+        if not customer_ids:
+            return {}
+
+        from app.modules.finance.enums import DebtStatus
+        from app.modules.finance.models import CustomerDebt
+
+        result = await self._session.execute(
+            select(
+                CustomerDebt.customer_id,
+                func.coalesce(
+                    func.sum(CustomerDebt.original_amount - CustomerDebt.paid_amount),
+                    Decimal("0"),
+                ).label("outstanding"),
+            )
+            .where(CustomerDebt.customer_id.in_(customer_ids))
+            .where(CustomerDebt.deleted_at.is_(None))
+            .where(
+                CustomerDebt.status.in_(
+                    [DebtStatus.OUTSTANDING, DebtStatus.PARTIALLY_PAID]
+                )
+            )
+            .group_by(CustomerDebt.customer_id)
+        )
+        return {row.customer_id: Decimal(str(row.outstanding)) for row in result}

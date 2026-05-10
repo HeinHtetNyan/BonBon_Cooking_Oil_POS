@@ -54,9 +54,9 @@ export const customersApi = {
     return res.data;
   },
 
-  listDebts: async (customerId: string): Promise<CustomerDebtResponse[]> => {
+  listDebts: async (customerId: string): Promise<PaginatedResponse<CustomerDebtResponse>> => {
     const res = await apiClient.get(`/finance/debts`, {
-      params: { customer_id: customerId },
+      params: { customer_id: customerId, per_page: 50 },
     });
     return res.data;
   },
@@ -66,6 +66,13 @@ export const customersApi = {
     data: DebtPaymentCreate,
   ): Promise<SuccessResponse<CustomerDebtResponse>> => {
     const res = await apiClient.post(`/finance/debts/${debtId}/payments`, data);
+    return res.data;
+  },
+
+  cancelDebt: async (debtId: string, reason: string): Promise<SuccessResponse<CustomerDebtResponse>> => {
+    const res = await apiClient.post(`/finance/debts/${debtId}/cancel`, null, {
+      params: { reason },
+    });
     return res.data;
   },
 };

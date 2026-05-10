@@ -6,8 +6,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.schemas.base import PaginatedResponse, SuccessResponse, ok, paginated
+from app.database.session import get_db_session
 from app.modules.auth.dependencies import get_current_active_user, require_role
 from app.modules.users.enums import UserRole
 from app.modules.users.models import User
@@ -68,8 +70,12 @@ async def create_voucher(
     data: VoucherCreate,
     current_user: Annotated[User, Depends(get_current_active_user)],
     service: Annotated[VoucherService, Depends(get_voucher_service)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> SuccessResponse[VoucherResponse]:
     voucher = await service.create_voucher(data, actor=str(current_user.id))
+    # Commit before sending the response so the client's next request
+    # (confirm or recordPayment) sees the committed row immediately.
+    await db.commit()
     return ok(_to_response(voucher))
 
 
@@ -135,9 +141,11 @@ async def record_voucher_payment(
     data: VoucherPaymentSimple,
     current_user: Annotated[User, Depends(get_current_active_user)],
     service: Annotated[VoucherService, Depends(get_voucher_service)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> SuccessResponse[VoucherResponse]:
     """Record a payment against a confirmed voucher."""
     voucher = await service.record_payment(voucher_id, data, actor=str(current_user.id))
+    await db.commit()
     return ok(_to_response(voucher))
 
 
@@ -150,9 +158,11 @@ async def confirm_voucher(
     voucher_id: UUID,
     current_user: Annotated[User, Depends(get_current_active_user)],
     service: Annotated[VoucherService, Depends(get_voucher_service)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> SuccessResponse[VoucherResponse]:
     """Confirm a DRAFT voucher. Triggers inventory SALE_OUT and ledger entries."""
     voucher = await service.confirm_voucher(voucher_id, actor=str(current_user.id))
+    await db.commit()
     return ok(_to_response(voucher))
 
 
@@ -165,6 +175,7 @@ async def void_voucher(
     voucher_id: UUID,
     current_user: Annotated[User, Depends(get_current_active_user)],
     service: Annotated[VoucherService, Depends(get_voucher_service)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
     reason: str = Body(embed=True, description="Reason for voiding this voucher"),
 ) -> SuccessResponse[VoucherResponse]:
     """
@@ -174,4 +185,5 @@ async def void_voucher(
     voucher = await service.void_voucher(
         voucher_id, reason, actor=str(current_user.id)
     )
+    await db.commit()
     return ok(_to_response(voucher))

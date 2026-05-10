@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL 16
   postgres:
     image: postgres:16-alpine
     container_name: bonbon_postgres
@@ -22,7 +21,6 @@ services:
     networks:
       - bonbon_net
 
-  # Redis 7
   redis:
     image: redis:7-alpine
     container_name: bonbon_redis
@@ -32,9 +30,6 @@ services:
       --requirepass ${REDIS_PASSWORD:-dev_redis_pass}
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
       --appendonly yes
     volumes:
       - redis_data:/data
@@ -48,12 +43,12 @@ services:
     networks:
       - bonbon_net
 
-  # FastAPI Application
   api:
     build:
       context: .
       dockerfile: Dockerfile
       target: development
+    image: bonbon-oil-backend
     container_name: bonbon_api
     restart: unless-stopped
     env_file: .env
@@ -62,7 +57,7 @@ services:
       REDIS_HOST: redis
     volumes:
       - .:/app
-      - /app/.venv  # exclude venv from bind mount
+      - /app/.venv
     ports:
       - "8000:8000"
     depends_on:
@@ -80,82 +75,49 @@ services:
       --reload-dir app
       --log-level debug
 
-  # Celery Worker
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: bonbon_worker
+  db-backup:
+    image: prodrigestivill/postgres-backup-local
+    container_name: bonbon_backup
     restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_HOST: postgres
-      REDIS_HOST: redis
     volumes:
-      - .:/app
-      - /app/.venv
+      - ./backups:/backups
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - bonbon_net
-    command: >
-      celery -A app.workers.celery_app:celery_app worker
-      --loglevel=info
-      --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
-      --queues=default,high_priority,reports
-
-  # Celery Beat (Scheduler)
-  beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: bonbon_beat
-    restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres
-      REDIS_HOST: redis
-    volumes:
-      - .:/app
-      - /app/.venv
-    depends_on:
-      - worker
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB:-bonbon_oil_db}
+      - POSTGRES_USER=${POSTGRES_USER:-bonbon_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-dev_password}
+      - SCHEDULE=@hourly
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
     networks:
       - bonbon_net
-    command: >
-      celery -A app.workers.celery_app:celery_app beat
-      --loglevel=info
-      --scheduler celery.beat:PersistentScheduler
-      --schedule=/tmp/celerybeat-schedule
 
-  # Flower (Celery monitoring)
-  flower:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: bonbon_flower
+  backup-uploader:
+    image: rclone/rclone:latest
+    container_name: bonbon_backup_uploader
     restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_HOST: postgres
-      REDIS_HOST: redis
     volumes:
-      - .:/app
-    ports:
-      - "5555:5555"
+      - ./backups:/backups:ro
+      - ./scripts/rclone-sync.sh:/rclone-sync.sh:ro
+      - ./logs:/logs
     depends_on:
-      - worker
+      - db-backup
+    environment:
+      - RCLONE_CONFIG_R2_TYPE=s3
+      - RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+      - RCLONE_CONFIG_R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - RCLONE_CONFIG_R2_ENDPOINT=https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+      - R2_BUCKET=${R2_BUCKET}
+    entrypoint: ["/bin/sh", "/rclone-sync.sh"]
     networks:
       - bonbon_net
-    command: >
-      celery -A app.workers.celery_app:celery_app flower
-      --port=5555
 
 volumes:
   postgres_data:

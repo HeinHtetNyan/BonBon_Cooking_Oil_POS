@@ -99,7 +99,7 @@ export function VoucherList() {
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(v.total_amount)}</TableCell>
                     <TableCell className="text-right text-green-600">{formatCurrency(v.paid_amount)}</TableCell>
-                    <TableCell className="text-right text-orange-600">{formatCurrency(v.outstanding_amount)}</TableCell>
+                    <TableCell className="text-right text-orange-600">{formatCurrency(Math.max(0, Number(v.outstanding_amount)))}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`/vouchers/${v.id}`); }}>
                         <Eye className="w-4 h-4" />

@@ -112,6 +112,7 @@ export function VoucherCreate() {
   const grandTotal = itemsSubtotal + extraTotal;
 
   const selectedCustomer = customersData?.data?.find((c: CustomerResponse) => c.id === watchedCustomerId);
+  const previousDebt = selectedCustomer ? Number(selectedCustomer.total_debt) : 0;
 
   const mutation = useMutation({
     mutationFn: async (data: FormValues) => {
@@ -128,26 +129,13 @@ export function VoucherCreate() {
           description: ec.description,
           amount: ec.amount,
         })),
+        auto_confirm: true,
       };
       const res = await vouchersApi.create(payload);
       delete apiClient.defaults.headers.common["Idempotency-Key"];
 
-      // Auto-confirm so it immediately affects inventory and debt
-      let confirmed = res;
-      let confirmFailed = false;
-      try {
-        confirmed = await vouchersApi.confirm(res.id, { expected_version: res.version_number });
-      } catch (confirmErr) {
-        confirmFailed = true;
-        toast({
-          title: t("vouchers.newVoucher"),
-          description: getErrorMessage(confirmErr),
-          variant: "destructive",
-        });
-      }
-
-      // Record payment if a method was selected and voucher was successfully confirmed
-      if (paymentMethod && !confirmFailed) {
+      // Record payment if a method was selected (voucher is already confirmed)
+      if (paymentMethod) {
         const codeMap: Record<PaymentMethod, string> = {
           Cash: "CASH",
           KPay: "KBZ_PAY",
@@ -155,19 +143,23 @@ export function VoucherCreate() {
         };
         const amountToRecord = paymentAmount !== "" && Number(paymentAmount) > 0
           ? Number(paymentAmount)
-          : Number(confirmed.total_amount);
+          : Number(res.total_amount);
         try {
-          await vouchersApi.recordPayment(confirmed.id, {
+          await vouchersApi.recordPayment(res.id, {
             payment_method_code: codeMap[paymentMethod],
             amount: amountToRecord,
             reference_number: paymentMethod === "Bank Transfer" && bankRef.trim() ? bankRef.trim() : undefined,
           });
-        } catch {
-          // Payment recording failure is non-fatal — voucher is already created
+        } catch (payErr) {
+          toast({
+            title: "Payment not recorded",
+            description: getErrorMessage(payErr),
+            variant: "destructive",
+          });
         }
       }
 
-      return confirmed;
+      return res;
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
@@ -229,13 +221,13 @@ export function VoucherCreate() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">{t("vouchers.customerDebtTracking")}</p>
-              {selectedCustomer && selectedCustomer.credit_balance > 0 && (
+              {previousDebt > 0 && (
                 <div className="rounded-md bg-orange-50 border border-orange-200 p-3 space-y-1">
                   <p className="text-sm text-orange-800">
-                    {t("vouchers.previousOutstanding")}: <span className="font-semibold">{formatCurrency(selectedCustomer.credit_balance)}</span>
+                    {t("vouchers.previousOutstanding")}: <span className="font-semibold">{formatCurrency(previousDebt)}</span>
                   </p>
                   <p className="text-sm font-bold text-orange-900">
-                    {t("vouchers.totalOwed")}: {formatCurrency(grandTotal + selectedCustomer.credit_balance)}
+                    {t("vouchers.totalOwed")}: {formatCurrency(grandTotal + previousDebt)}
                   </p>
                 </div>
               )}
@@ -360,9 +352,15 @@ export function VoucherCreate() {
                     <span>{formatCurrency(extraTotal)}</span>
                   </div>
                 )}
+                {previousDebt > 0 && (
+                  <div className="flex justify-between text-sm text-orange-600 pt-1">
+                    <span>+ {t("vouchers.previousOutstanding")}</span>
+                    <span>{formatCurrency(previousDebt)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold pt-1 border-t">
                   <span>{t("common.total")}</span>
-                  <span>{formatCurrency(grandTotal)}</span>
+                  <span>{formatCurrency(grandTotal + previousDebt)}</span>
                 </div>
               </div>
             </div>

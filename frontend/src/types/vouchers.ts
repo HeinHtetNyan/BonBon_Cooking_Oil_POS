@@ -57,6 +57,7 @@ export interface VoucherCreate {
   payments?: VoucherPaymentCreate[];
   extra_charges?: VoucherExtraCharge[];
   notes?: string;
+  auto_confirm?: boolean;
 }
 
 export interface VoucherUpdate {

@@ -66,6 +66,13 @@ docs/
 .docker/
 docker-compose.override.yml
 
+# Backups & rclone logs
+backups/
+logs/
+
+# Operational scripts (may contain environment-specific config)
+scripts/
+
 # Celery
 celerybeat-schedule
 celerybeat.pid

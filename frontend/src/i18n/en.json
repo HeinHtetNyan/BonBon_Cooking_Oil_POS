@@ -8,6 +8,7 @@
     "expenses": "Expenses",
     "reports": "Reports",
     "users": "Users",
+    "auditLog": "Audit Log",
     "erpSystem": "ERP System"
   },
   "common": {
@@ -102,7 +103,12 @@
     "customerNotFound": "Customer not found",
     "retail": "Retail",
     "wholesale": "Wholesale",
-    "distributor": "Distributor"
+    "distributor": "Distributor",
+    "outstandingDebts": "Outstanding Debts",
+    "originalAmount": "Original Amount",
+    "paidAmount": "Paid Amount",
+    "writeOff": "Write Off",
+    "debtWrittenOff": "Debt written off successfully"
   },
   "vouchers": {
     "title": "Sales Vouchers",
@@ -293,6 +299,23 @@
     "manager": "Manager",
     "cashier": "Cashier",
     "warehouse": "Warehouse"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "Full history of every action taken in the system",
+    "filters": "Filters",
+    "filterAction": "Filter by action / path",
+    "filterActor": "Filter by actor (user ID)",
+    "actorIdPlaceholder": "User ID...",
+    "clearFilters": "Clear",
+    "time": "Time",
+    "actor": "Actor",
+    "action": "Action",
+    "status": "Status",
+    "duration": "Duration",
+    "ipAddress": "IP Address",
+    "before": "Before",
+    "after": "After"
   },
   "users": {
     "title": "Users",

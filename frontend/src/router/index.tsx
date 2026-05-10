@@ -15,6 +15,7 @@ import { BatchCreate } from "@/features/production/BatchCreate";
 import { ExpenseList } from "@/features/expenses/ExpenseList";
 import { ReportsDashboard } from "@/features/reports/ReportsDashboard";
 import { UserList } from "@/features/users/UserList";
+import { AuditLogPage } from "@/features/users/AuditLogPage";
 
 export const router = createBrowserRouter([
   {
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
           {
             element: <ProtectedRoute requiredRoles={["admin", "super_admin", "manager"]} />,
             children: [{ path: "/users", element: <UserList /> }],
+          },
+          {
+            element: <ProtectedRoute requiredRoles={["super_admin"]} />,
+            children: [{ path: "/audit", element: <AuditLogPage /> }],
           },
         ],
       },

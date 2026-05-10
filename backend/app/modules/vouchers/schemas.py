@@ -68,6 +68,7 @@ class VoucherCreate(AppBaseModel):
     payments: list[VoucherPaymentCreate] = Field(default_factory=list)
     extra_charges: list[VoucherExtraCharge] = Field(default_factory=list)
     notes: str | None = None
+    auto_confirm: bool = False
 
     @field_validator("sale_date", mode="before")
     @classmethod
@@ -117,6 +118,15 @@ class VoucherResponse(AppBaseModel):
     updated_at: datetime
     items: list[VoucherItemResponse] = Field(default_factory=list)
     payments: list[VoucherPaymentResponse] = Field(default_factory=list)
+
+    @field_validator("outstanding_amount", mode="before")
+    @classmethod
+    def _clamp_outstanding(cls, v: object) -> object:
+        from decimal import Decimal
+        try:
+            return max(Decimal("0"), Decimal(str(v)))
+        except Exception:
+            return Decimal("0")
 
     @field_validator("extra_charges", mode="before")
     @classmethod

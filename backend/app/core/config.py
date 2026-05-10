@@ -78,13 +78,6 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str = ""
     REDIS_DB: int = 0
     REDIS_CACHE_DB: int = 1
-    REDIS_CELERY_DB: int = 2
-
-    # Celery
-    CELERY_WORKER_CONCURRENCY: int = 4
-    CELERY_TASK_SOFT_TIME_LIMIT: int = 300
-    CELERY_TASK_TIME_LIMIT: int = 600
-    CELERY_TASK_ALWAYS_EAGER: bool = False
 
     # JWT
     JWT_ALGORITHM: str = "HS256"
@@ -131,11 +124,6 @@ class Settings(BaseSettings):
     def redis_cache_url(self) -> str:
         auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
         return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_CACHE_DB}"
-
-    @property
-    def redis_celery_url(self) -> str:
-        auth = f":{self.REDIS_PASSWORD}@" if self.REDIS_PASSWORD else ""
-        return f"redis://{auth}{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_CELERY_DB}"
 
     @property
     def is_production(self) -> bool:

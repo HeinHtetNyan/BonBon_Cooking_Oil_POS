@@ -16,7 +16,7 @@ class InventoryItemRepository(BaseRepository[InventoryItem]):
     model = InventoryItem
 
     async def get_by_code(self, code: str) -> InventoryItem | None:
-        q = self._base_query().where(InventoryItem.code == code)
+        q = self._base_query(include_deleted=True).where(InventoryItem.code == code)
         result = await self._session.execute(q)
         return result.scalar_one_or_none()
 

@@ -1,23 +1,14 @@
 """
 Audit log middleware.
 
-Captures every state-mutating request (POST/PUT/PATCH/DELETE) and queues
-an audit log entry. The actual write is deferred to a Celery task so it
-never blocks the request path.
-
-What is captured:
-- actor (user ID from JWT, or "anonymous")
-- HTTP method + path
-- request body hash (not the body itself — avoid logging PII/secrets)
-- response status
-- duration
-- IP address
-- request_id (from RequestIDMiddleware, must run first)
+Captures every state-mutating request (POST/PUT/PATCH/DELETE) and writes
+an audit log entry as a fire-and-forget asyncio task — never blocks the
+request path.
 """
 
 from __future__ import annotations
 
-import hashlib
+import asyncio
 import time
 
 import structlog
@@ -41,38 +32,43 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         start = time.perf_counter()
-
-        # Extract actor before calling next (token may be needed)
-        actor = _extract_actor(request)
+        actor_id, actor_username, actor_role = _extract_actor(request)
 
         response = await call_next(request)
 
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
 
-        # Async audit write — fire and forget via Celery
-        _enqueue_audit(
-            actor=actor,
-            method=request.method,
-            path=request.url.path,
-            status_code=response.status_code,
-            duration_ms=duration_ms,
-            ip_address=_get_ip(request),
+        asyncio.create_task(
+            _write_audit(
+                actor_id=actor_id,
+                actor_username=actor_username,
+                actor_role=actor_role,
+                method=request.method,
+                path=request.url.path,
+                status_code=response.status_code,
+                duration_ms=duration_ms,
+                ip_address=_get_ip(request),
+            )
         )
 
         return response
 
 
-def _extract_actor(request: Request) -> str:
+def _extract_actor(request: Request) -> tuple[str, str | None, str | None]:
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         try:
             from app.core.security import decode_token
 
             payload = decode_token(auth_header[7:])
-            return str(payload.get("sub", "unknown"))
+            actor_id = str(payload.get("sub", "unknown"))
+            actor_username = payload.get("username")
+            roles = payload.get("roles", [])
+            actor_role = roles[0] if roles else None
+            return actor_id, actor_username, actor_role
         except Exception:
             pass
-    return "anonymous"
+    return "anonymous", None, None
 
 
 def _get_ip(request: Request) -> str:
@@ -84,11 +80,35 @@ def _get_ip(request: Request) -> str:
     return "unknown"
 
 
-def _enqueue_audit(**kwargs: object) -> None:
-    """Fire-and-forget: enqueue to Celery. Ignore failures — audit must never break requests."""
+async def _write_audit(
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    actor_role: str | None,
+    method: str,
+    path: str,
+    status_code: int,
+    duration_ms: float,
+    ip_address: str,
+) -> None:
     try:
-        from app.workers.tasks.audit_tasks import write_http_audit_log
+        from app.database.session import db_manager
+        from app.modules.audit.models import AuditLog
+        from app.modules.audit.repositories import AuditLogRepository
 
-        write_http_audit_log.delay(**kwargs)
+        async with db_manager.session() as session:
+            repo = AuditLogRepository(session)
+            await repo.create(
+                AuditLog(
+                    actor_id=actor_id,
+                    actor_username=actor_username,
+                    actor_role=actor_role,
+                    action=f"{method} {path}",
+                    resource_type="http_request",
+                    status_code=status_code,
+                    duration_ms=duration_ms,
+                    ip_address=ip_address,
+                )
+            )
     except Exception as exc:
-        logger.warning("audit.enqueue_failed", error=str(exc))
+        logger.warning("audit.write_failed", error=str(exc))
