@@ -59,6 +59,9 @@ htmlcov/
 credentials.json
 service_account*.json
 
+# Documentation
+docs/
+
 # Docker
 .docker/
 docker-compose.override.yml

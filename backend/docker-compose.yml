@@ -131,6 +131,7 @@ services:
       celery -A app.workers.celery_app:celery_app beat
       --loglevel=info
       --scheduler celery.beat:PersistentScheduler
+      --schedule=/tmp/celerybeat-schedule
 
   # Flower (Celery monitoring)
   flower:
