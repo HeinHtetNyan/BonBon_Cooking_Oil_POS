@@ -40,6 +40,7 @@ async def list_vouchers(
     voucher_type: VoucherType | None = Query(default=None),
     start_date: str | None = Query(default=None, description="YYYY-MM-DD"),
     end_date: str | None = Query(default=None, description="YYYY-MM-DD"),
+    q: str | None = Query(default=None, description="Search by voucher number"),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
 ) -> PaginatedResponse[VoucherResponse]:
@@ -49,6 +50,7 @@ async def list_vouchers(
         voucher_type=voucher_type,
         start_date=start_date,
         end_date=end_date,
+        q=q,
         page=page,
         per_page=per_page,
     )

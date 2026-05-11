@@ -34,13 +34,9 @@ export function VoucherList() {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: ["vouchers", page],
-    queryFn: () => vouchersApi.list({ page, per_page: 25 }),
+    queryKey: ["vouchers", page, search],
+    queryFn: () => vouchersApi.list({ page, per_page: 25, q: search || undefined }),
   });
-
-  const filtered = data?.data.filter((v) =>
-    !search || v.voucher_number.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="space-y-5">
@@ -62,7 +58,7 @@ export function VoucherList() {
               className="pl-9"
               placeholder={t("vouchers.searchPlaceholder")}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
         </CardContent>
@@ -88,7 +84,7 @@ export function VoucherList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(filtered ?? []).map((v) => (
+                {(data?.data ?? []).map((v) => (
                   <TableRow key={v.id} className="cursor-pointer" onClick={() => navigate(`/vouchers/${v.id}`)}>
                     <TableCell className="font-mono text-sm">{v.voucher_number}</TableCell>
                     <TableCell>{formatDate(v.sale_date)}</TableCell>
@@ -107,7 +103,7 @@ export function VoucherList() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(filtered ?? []).length === 0 && (
+                {data?.data.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{t("vouchers.noVouchersFound")}</TableCell>
                   </TableRow>

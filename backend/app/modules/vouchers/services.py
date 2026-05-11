@@ -453,6 +453,7 @@ class VoucherService(BaseService):
         voucher_type: VoucherType | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
+        q: str | None = None,
         page: int = 1,
         per_page: int = 20,
     ) -> tuple[list[Voucher], int]:
@@ -480,6 +481,8 @@ class VoucherService(BaseService):
             filters.append(Voucher.sale_date >= start_date)
         if end_date is not None:
             filters.append(Voucher.sale_date <= end_date)
+        if q is not None:
+            filters.append(Voucher.voucher_number.ilike(f"%{q}%"))
 
         for f in filters:
             base = base.where(f)
@@ -677,12 +680,11 @@ class VoucherService(BaseService):
         from app.modules.customers.models import Customer
 
         debt_repo = CustomerDebtRepository(self._session)
-        all_debts = await debt_repo.get_by_customer(customer_id)
-        # oldest first
-        outstanding_debts = [
-            d for d in reversed(all_debts)
-            if d.status in (DebtStatus.OUTSTANDING, DebtStatus.PARTIALLY_PAID)
-        ]
+        all_debts = await debt_repo.get_by_customer(
+            customer_id,
+            statuses=[DebtStatus.OUTSTANDING, DebtStatus.PARTIALLY_PAID],
+        )
+        outstanding_debts = list(reversed(all_debts))  # oldest first
 
         remaining = excess
         total_applied = ZERO

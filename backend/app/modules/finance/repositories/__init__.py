@@ -283,14 +283,18 @@ class CustomerDebtRepository(BaseRepository[CustomerDebt]):
         self,
         customer_id: UUID,
         status: DebtStatus | None = None,
+        statuses: list[DebtStatus] | None = None,
     ) -> list[CustomerDebt]:
         """
         Fetch debts for a customer, optionally filtered by status.
         Ordered by created_at DESC (most recent first).
+        Pass `statuses` (list) to filter by multiple statuses in one query.
         """
         filters = [CustomerDebt.customer_id == customer_id]
         if status is not None:
             filters.append(CustomerDebt.status == status)
+        elif statuses is not None:
+            filters.append(CustomerDebt.status.in_(statuses))
         q = (
             self._base_query()
             .where(and_(*filters))

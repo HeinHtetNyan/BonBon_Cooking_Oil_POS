@@ -19,6 +19,7 @@ interface ListVouchersParams {
   voucher_type?: VoucherType;
   start_date?: string;
   end_date?: string;
+  q?: string;
 }
 
 export const vouchersApi = {

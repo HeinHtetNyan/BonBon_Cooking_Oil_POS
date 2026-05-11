@@ -1,10 +1,12 @@
-import { Menu, Bell, LogOut, User, Settings } from "lucide-react";
+import { Menu, Bell, LogOut, User, Settings, Wifi, WifiOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useIsMutating } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { authApi } from "@/api/auth";
 import { queryClient } from "@/lib/queryClient";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -33,6 +35,8 @@ export function Header() {
   const { user, clearAuth, refreshToken } = useAuthStore();
   const { toggleSidebar, setMobileSidebarOpen } = useUIStore();
   const navigate = useNavigate();
+  const online = useOnlineStatus();
+  const pendingMutations = useIsMutating();
 
   async function handleLogout() {
     try {
@@ -65,6 +69,23 @@ export function Header() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
+        {!online ? (
+          <div className="flex items-center gap-1.5 text-xs text-destructive font-medium animate-pulse">
+            <WifiOff className="w-3.5 h-3.5" />
+            <span>Offline — data will upload when reconnected</span>
+          </div>
+        ) : pendingMutations > 0 ? (
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-orange-500 font-medium">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>Uploading…</span>
+          </div>
+        ) : (
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-green-600 font-medium">
+            <Wifi className="w-3.5 h-3.5" />
+            <span>Live</span>
+          </div>
+        )}
+
         <LanguageToggle />
 
         <Button variant="ghost" size="icon">
