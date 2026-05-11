@@ -23,11 +23,11 @@ function DateRangeFilter({ start, end, onStartChange, onEndChange }: {
     <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
         <Label className="text-xs">{t("common.startDate")}</Label>
-        <Input type="date" value={start} onChange={(e) => onStartChange(e.target.value)} className="w-36" />
+        <Input type="date" value={start} onChange={(e) => onStartChange(e.target.value)} className="w-full sm:w-36" />
       </div>
       <div className="space-y-1">
         <Label className="text-xs">{t("common.endDate")}</Label>
-        <Input type="date" value={end} onChange={(e) => onEndChange(e.target.value)} className="w-36" />
+        <Input type="date" value={end} onChange={(e) => onEndChange(e.target.value)} className="w-full sm:w-36" />
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ function SalesTab() {
           </Card>
           <Card>
             <CardContent className="p-0 overflow-x-auto">
-              <Table>
+              <Table className="min-w-[480px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.date")}</TableHead>
@@ -156,7 +156,7 @@ function ExpensesTab() {
           </Card>
           <Card>
             <CardContent className="p-0 overflow-x-auto">
-              <Table>
+              <Table className="min-w-[360px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.category")}</TableHead>
@@ -196,7 +196,7 @@ function InventoryTab() {
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
-            <Table>
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.code")}</TableHead>
@@ -239,7 +239,7 @@ function DebtTab() {
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
-            <Table>
+            <Table className="min-w-[420px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.code")}</TableHead>
@@ -276,11 +276,11 @@ export function ReportsDashboard() {
       </div>
 
       <Tabs defaultValue="sales">
-        <TabsList>
-          <TabsTrigger value="sales">{t("reports.sales")}</TabsTrigger>
-          <TabsTrigger value="expenses">{t("reports.expenses")}</TabsTrigger>
-          <TabsTrigger value="inventory">{t("reports.inventoryTab")}</TabsTrigger>
-          <TabsTrigger value="debts">{t("reports.customerDebts")}</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="sales" className="flex-1 sm:flex-none">{t("reports.sales")}</TabsTrigger>
+          <TabsTrigger value="expenses" className="flex-1 sm:flex-none">{t("reports.expenses")}</TabsTrigger>
+          <TabsTrigger value="inventory" className="flex-1 sm:flex-none">{t("reports.inventoryTab")}</TabsTrigger>
+          <TabsTrigger value="debts" className="flex-1 sm:flex-none">{t("reports.customerDebts")}</TabsTrigger>
         </TabsList>
         <TabsContent value="sales"><SalesTab /></TabsContent>
         <TabsContent value="expenses"><ExpensesTab /></TabsContent>

@@ -52,7 +52,7 @@ export function VoucherList() {
 
       <Card>
         <CardContent className="p-4">
-          <div className="relative max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               className="pl-9"
@@ -71,7 +71,7 @@ export function VoucherList() {
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[680px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("vouchers.voucherNumber")}</TableHead>

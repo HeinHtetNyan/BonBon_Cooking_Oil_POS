@@ -201,7 +201,7 @@ export function VoucherCreate() {
                 <option value="return">{t("vouchers.return")}</option>
               </select>
             </div>
-            <div className="col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 space-y-1.5">
               <Label>{t("vouchers.customerOptional")}</Label>
               <div className="flex gap-2 items-center">
                 <select
@@ -232,7 +232,7 @@ export function VoucherCreate() {
                 </div>
               )}
             </div>
-            <div className="col-span-2 space-y-1.5">
+            <div className="sm:col-span-2 space-y-1.5">
               <Label>{t("vouchers.notesOptional")}</Label>
               <Input {...register("notes")} placeholder="Additional notes" autoComplete="off" />
             </div>
@@ -327,7 +327,7 @@ export function VoucherCreate() {
                     <Input placeholder="e.g. Delivery fee" {...register(`extra_charges.${idx}.description`)} autoComplete="off" />
                     {errors.extra_charges?.[idx]?.description && <p className="text-xs text-destructive">{errors.extra_charges[idx]?.description?.message}</p>}
                   </div>
-                  <div className="w-32 shrink-0 space-y-1">
+                  <div className="w-24 sm:w-32 shrink-0 space-y-1">
                     {idx === 0 && <Label className="text-xs">{t("vouchers.amountKyats")}</Label>}
                     <Input type="number" step="1" {...register(`extra_charges.${idx}.amount`)} />
                     {errors.extra_charges?.[idx]?.amount && <p className="text-xs text-destructive">{errors.extra_charges[idx]?.amount?.message}</p>}
@@ -341,7 +341,7 @@ export function VoucherCreate() {
 
             <Separator />
             <div className="flex justify-end">
-              <div className="text-right space-y-1 min-w-48">
+              <div className="text-right space-y-1 w-full sm:min-w-48 sm:w-auto">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{t("vouchers.itemsSubtotal")}</span>
                   <span>{formatCurrency(itemsSubtotal)}</span>

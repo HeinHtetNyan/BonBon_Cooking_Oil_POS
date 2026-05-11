@@ -37,7 +37,7 @@ export function BatchList() {
           {isLoading ? (
             <div className="p-4 space-y-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
           ) : (
-            <Table>
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("production.batchNumber")}</TableHead>

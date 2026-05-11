@@ -78,7 +78,7 @@ export function Dashboard() {
           <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
           <p className="text-muted-foreground text-sm">{t("dashboard.subtitle")}</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Card key={i}><CardContent className="p-5"><Skeleton className="h-16" /></CardContent></Card>
           ))}

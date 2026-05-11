@@ -84,7 +84,7 @@ export function UserList() {
           {isLoading ? (
             <div className="p-4 space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
           ) : (
-            <Table>
+            <Table className="min-w-[520px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("users.userCol")}</TableHead>
@@ -139,7 +139,7 @@ export function UserList() {
           <DialogHeader><DialogTitle>{t("users.newUser")}</DialogTitle></DialogHeader>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3" autoComplete="off">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t("users.fullName")}</Label>
                 <Input {...register("full_name")} />

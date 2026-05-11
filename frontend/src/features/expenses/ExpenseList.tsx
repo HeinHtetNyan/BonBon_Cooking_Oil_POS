@@ -114,7 +114,7 @@ export function ExpenseList() {
           {isLoading ? (
             <div className="p-4 space-y-3">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
           ) : (
-            <Table>
+            <Table className="min-w-[560px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.ref")}</TableHead>
@@ -181,12 +181,12 @@ export function ExpenseList() {
                 <Input type="date" {...register("expense_date")} />
                 {errors.expense_date && <p className="text-xs text-destructive">{errors.expense_date.message}</p>}
               </div>
-              <div className="col-span-2 space-y-1.5">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("common.description")} *</Label>
                 <Input {...register("description")} />
                 {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
               </div>
-              <div className="col-span-2 space-y-1.5">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("expenses.amountKyats")}</Label>
                 <Input type="number" step="1" {...register("amount")} />
                 {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
@@ -216,11 +216,11 @@ export function ExpenseList() {
                 <Label>{t("common.date")} *</Label>
                 <Input type="date" {...regEdit("expense_date")} />
               </div>
-              <div className="col-span-2 space-y-1.5">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("common.description")} *</Label>
                 <Input {...regEdit("description")} />
               </div>
-              <div className="col-span-2 space-y-1.5">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("expenses.amountKyats")}</Label>
                 <Input type="number" step="1" {...regEdit("amount")} />
               </div>

@@ -187,7 +187,7 @@ export function AuditLogPage() {
               {t("common.noDataFound")}
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[860px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-44">{t("audit.time")}</TableHead>
@@ -223,7 +223,7 @@ export function AuditLogPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className={cn(
-                            "text-[10px] font-bold px-1.5 py-0.5 rounded font-mono",
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded font-mono shrink-0",
                             methodBadgeClass(log.action),
                           )}>
                             {method}

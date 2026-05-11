@@ -72,7 +72,8 @@ export function Header() {
         {!online ? (
           <div className="flex items-center gap-1.5 text-xs text-destructive font-medium animate-pulse">
             <WifiOff className="w-3.5 h-3.5" />
-            <span>Offline — data will upload when reconnected</span>
+            <span className="hidden sm:inline">Offline — data will upload when reconnected</span>
+          <span className="sm:hidden">Offline</span>
           </div>
         ) : pendingMutations > 0 ? (
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-orange-500 font-medium">

@@ -330,23 +330,23 @@ export function VoucherDetail() {
       )}
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">{t("vouchers.totalAmount")}</p>
-            <p className="text-lg font-bold">{formatCurrency(voucher.total_amount)}</p>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs text-muted-foreground truncate">{t("vouchers.totalAmount")}</p>
+            <p className="text-base sm:text-lg font-bold tabular-nums">{formatCurrency(voucher.total_amount)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <p className="text-xs text-muted-foreground">{t("vouchers.paid")}</p>
-            <p className="text-lg font-bold text-green-600">{formatCurrency(voucher.paid_amount)}</p>
+            <p className="text-base sm:text-lg font-bold text-green-600 tabular-nums">{formatCurrency(voucher.paid_amount)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <p className="text-xs text-muted-foreground">{t("vouchers.outstanding")}</p>
-            <p className="text-lg font-bold text-orange-600">{formatCurrency(Math.max(0, Number(voucher.outstanding_amount)))}</p>
+            <p className="text-base sm:text-lg font-bold text-orange-600 tabular-nums">{formatCurrency(Math.max(0, Number(voucher.outstanding_amount)))}</p>
           </CardContent>
         </Card>
       </div>
@@ -356,7 +356,7 @@ export function VoucherDetail() {
         <CardHeader><CardTitle className="text-base">{t("vouchers.lineItems")}</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[560px]">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("vouchers.item")}</TableHead>
@@ -415,7 +415,7 @@ export function VoucherDetail() {
         <Card>
           <CardHeader><CardTitle className="text-base">{t("vouchers.payments")}</CardTitle></CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            <Table>
+            <Table className="min-w-[360px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.amount")}</TableHead>
@@ -439,7 +439,7 @@ export function VoucherDetail() {
 
       {/* Record Payment Dialog */}
       <Dialog open={paymentOpen} onOpenChange={(v) => { setPaymentOpen(v); if (!v) { resetPay(); setPaymentMethod("Cash"); } }}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t("vouchers.recordPayment")}</DialogTitle></DialogHeader>
           <form onSubmit={handlePay((d) => paymentMutation.mutate(d))} className="space-y-4" autoComplete="off" noValidate>
             <div className="space-y-1.5">
@@ -490,7 +490,7 @@ export function VoucherDetail() {
 
       {/* Admin Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t("vouchers.editVoucher")}</DialogTitle></DialogHeader>
           <form onSubmit={handleEdit((d) => editMutation.mutate(d))} className="space-y-4" autoComplete="off">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -510,7 +510,7 @@ export function VoucherDetail() {
                   ))}
                 </select>
               </div>
-              <div className="col-span-2 space-y-1.5">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("common.notes")}</Label>
                 <Input {...regEdit("notes")} placeholder="Notes" />
               </div>

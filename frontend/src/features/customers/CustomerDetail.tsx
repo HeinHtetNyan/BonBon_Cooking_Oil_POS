@@ -114,12 +114,12 @@ export function CustomerDetail() {
       <Card>
         <CardHeader><CardTitle className="text-base">{t("customers.customerDetails")}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div><p className="text-muted-foreground">{t("common.phone")}</p><p className="font-medium">{customer.phone ?? "—"}</p></div>
             <div><p className="text-muted-foreground">{t("common.type")}</p><p className="font-medium">{customer.customer_type}</p></div>
-            <div className="col-span-2"><p className="text-muted-foreground">{t("common.address")}</p><p className="font-medium">{customer.address ?? "—"}</p></div>
+            <div className="sm:col-span-2"><p className="text-muted-foreground">{t("common.address")}</p><p className="font-medium">{customer.address ?? "—"}</p></div>
             <div><p className="text-muted-foreground">{t("customers.joinedDate")}</p><p className="font-medium">{formatDate(customer.created_at)}</p></div>
-            {customer.notes && <div className="col-span-2"><p className="text-muted-foreground">{t("common.notes")}</p><p className="font-medium">{customer.notes}</p></div>}
+            {customer.notes && <div className="sm:col-span-2"><p className="text-muted-foreground">{t("common.notes")}</p><p className="font-medium">{customer.notes}</p></div>}
           </div>
         </CardContent>
       </Card>
@@ -130,7 +130,7 @@ export function CustomerDetail() {
             <CardTitle className="text-base text-orange-700">{t("customers.outstandingDebts")}</CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            <Table>
+            <Table className="min-w-[540px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.date")}</TableHead>
@@ -190,7 +190,7 @@ export function CustomerDetail() {
           {!vouchersData || vouchersData.data.length === 0 ? (
             <p className="text-sm text-muted-foreground p-4">{t("customers.noVouchersYet")}</p>
           ) : (
-            <Table>
+            <Table className="min-w-[560px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("vouchers.voucherNumber")}</TableHead>

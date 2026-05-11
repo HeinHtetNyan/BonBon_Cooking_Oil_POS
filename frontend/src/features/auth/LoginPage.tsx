@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Droplets, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/auth";
@@ -44,8 +44,8 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary shadow-lg">
-            <Droplets className="w-7 h-7 text-white" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-2xl overflow-hidden shadow-lg">
+            <img src="/logo.jpg" alt="Bon Bon Oil" className="w-full h-full object-cover" />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold">Bon Bon Oil</h1>

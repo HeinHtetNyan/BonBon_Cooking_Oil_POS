@@ -190,7 +190,7 @@ export function InventoryList() {
       <Card>
         <CardContent className="p-4">
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as InventoryItemType | "all")}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder={t("inventory.allTypes")} />
             </SelectTrigger>
             <SelectContent>
@@ -208,7 +208,7 @@ export function InventoryList() {
           {isLoading ? (
             <div className="p-4 space-y-3">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-12" />)}</div>
           ) : (
-            <Table>
+            <Table className="min-w-[560px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.code")}</TableHead>
@@ -281,8 +281,8 @@ export function InventoryList() {
           <DialogHeader><DialogTitle>{t("inventory.newInventoryItem")}</DialogTitle></DialogHeader>
           {createError && <p className="text-sm text-destructive">{createError}</p>}
           <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-3" autoComplete="off">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("common.name")} *</Label>
                 <Input {...register("name")} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
@@ -324,8 +324,8 @@ export function InventoryList() {
           <DialogHeader><DialogTitle>{t("inventory.editItem")}</DialogTitle></DialogHeader>
           {editError && <p className="text-sm text-destructive">{editError}</p>}
           <form onSubmit={submitEdit((d) => editMutation.mutate(d))} className="space-y-3" autoComplete="off">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2 space-y-1.5">
                 <Label>{t("common.name")} *</Label>
                 <Input {...regEdit("name")} />
                 {errEdit.name && <p className="text-xs text-destructive">{errEdit.name.message}</p>}
@@ -368,7 +368,7 @@ export function InventoryList() {
           </DialogHeader>
           {stockError && <p className="text-sm text-destructive">{stockError}</p>}
           <form onSubmit={submitStock((d) => stockMutation.mutate(d))} className="space-y-3" autoComplete="off">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t("common.date")} *</Label>
                 <Input type="date" {...regStock("transaction_date")} />
