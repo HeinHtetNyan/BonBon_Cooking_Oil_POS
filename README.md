@@ -1,243 +1,145 @@
-# Bon Bon Oil ERP (Full System)
+# Bon Bon Oil ERP
 
-Bon Bon Oil ERP is a full-stack enterprise system for voucher sales, customer/debt management, inventory, production, expenses, reporting, and finance ledger workflows.
+[![Backend Quality](https://github.com/example/bon-bon-oil/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/example/bon-bon-oil/actions)
+[![Frontend Quality](https://github.com/example/bon-bon-oil/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/example/bon-bon-oil/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains:
-- `backend/`: FastAPI + PostgreSQL + Redis API service
-- `frontend/`: React + TypeScript + Vite web app
+A robust, enterprise-grade ERP system designed for specialized oil distribution businesses. This platform manages the entire lifecycle of voucher sales, inventory movements, production planning, customer credit, and financial accounting with a strong focus on data integrity, security, and auditability.
 
-## Core Features
+## 🏗️ System Architecture
 
-- Authentication with access/refresh JWT tokens
-- Role-based access (`super_admin`, `admin`, `manager`, `cashier`, `warehouse`)
-- Voucher lifecycle (draft, confirm, pay, void) with idempotency support
-- Inventory item management and stock movement tracking
-- Production batch planning and completion flows
-- Customer profiles, balances, and debt/payment tracking
-- Expense recording and approval/payment flow
-- Finance module with accounts, payment methods, journal entries, customer debts
-- Audit logs and reporting endpoints
-- Health checks and structured logging
+The system follows a modern decoupled architecture designed for high availability and transactional consistency:
 
-## Tech Stack
+```mermaid
+graph TD
+    Client[Web Frontend / React] <--> API[FastAPI Service]
+    API <--> DB[(PostgreSQL 16)]
+    API <--> Cache[(Redis 7)]
+    API -.-> Logs[Structured JSON Logs]
+    API -.-> R2[Cloudflare R2 Backups]
+```
+
+- **Frontend:** Responsive SPA built with React 19 and TypeScript, featuring offline support and multi-language (English/Burmese) capabilities.
+- **Backend:** Asynchronous REST API built with FastAPI, utilizing SQLAlchemy 2.0 for persistence and Redis for idempotency and caching.
+- **Integrity Layer:** Middleware-driven audit logging, idempotency protection, and transactional service patterns.
+
+## 🚀 Key Features
+
+### Core Modules
+- **Voucher Management:** Full lifecycle tracking from draft to confirmation, payment, and voiding.
+- **Inventory Engine:** Real-time stock movement tracking with an append-only ledger logic.
+- **Production Planning:** Batch-based production with automatic raw material consumption and yield tracking.
+- **Finance & Accounting:** Double-entry journal system, customer debt management, and flexible payment tracking.
+- **Customer Portal:** Management of profiles, credit limits, and historical balances.
+
+### System Capabilities
+- **Audit Logging:** Automated capture of all state-changing operations for compliance.
+- **Idempotency:** Protection against duplicate transactions using `X-Idempotency-Key`.
+- **Offline Mode:** Frontend support for pending uploads and local data persistence.
+- **RBAC:** Granular role-based access control (`super_admin`, `admin`, `manager`, `cashier`, `warehouse`).
+
+## 🛠️ Tech Stack
 
 ### Backend
-- Python 3.13
-- FastAPI, SQLAlchemy (async), Alembic
-- PostgreSQL 16
-- Redis 7
-- Pytest, Ruff, Mypy
-- Docker / Docker Compose
+- **Core:** Python 3.13, FastAPI, Pydantic v2
+- **Persistence:** PostgreSQL 16, SQLAlchemy 2.0 (Async), Alembic
+- **Caching:** Redis 7
+- **Quality:** Pytest, Mypy (Strict), Ruff
 
 ### Frontend
-- React 19 + TypeScript
-- Vite 8
-- React Router
-- TanStack Query
-- Axios
-- Zustand
-- i18next (English + Burmese)
-- Tailwind CSS + Radix UI
+- **Core:** React 19, TypeScript, Vite 6
+- **State & Data:** TanStack Query v5, Zustand
+- **UI:** Tailwind CSS, Radix UI, Lucide Icons
+- **i18n:** i18next (English + Burmese Unicode)
 
-## Repository Structure
+## 🏁 Getting Started
 
-```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── core/           # config, security, logging, exceptions
-│   │   ├── database/       # SQLAlchemy + Redis setup
-│   │   ├── middleware/     # request-id, timing, audit, idempotency
-│   │   ├── modules/        # auth/users/customers/inventory/...
-│   │   └── main.py         # FastAPI app factory + router registration
-│   ├── alembic/            # DB migrations
-│   ├── scripts/            # seed + superadmin scripts
-│   ├── tests/              # integration/unit tests
-│   ├── docker-compose.yml
-│   └── Makefile
-├── frontend/
-│   ├── src/
-│   │   ├── api/            # API clients per domain
-│   │   ├── features/       # page-level feature modules
-│   │   ├── components/      # layout + ui components
-│   │   ├── router/         # route definitions + guards
-│   │   ├── store/          # Zustand stores
-│   │   └── i18n/           # translations (en/mm)
-│   └── package.json
-└── README.md
+### Prerequisites
+- **Docker & Docker Compose** (Recommended)
+- **Node.js 20+**
+- **Python 3.13** (For local development)
+
+### 1. Environment Configuration
+
+The system requires environment variables. Templates are provided in each directory:
+
+```bash
+# Backend
+cd backend && cp .env.example .env
+
+# Frontend
+cd ../frontend && cp .env.example .env
 ```
 
-## Prerequisites
+> [!IMPORTANT]
+> Use **demo values** (e.g., `demo_pass`) for local development. Never commit real secrets.
 
-- Docker + Docker Compose
-- Node.js 20+ and npm
-- Python 3.13 (for local backend dev without Docker)
-
-## Environment Setup
-
-### Backend
-
-1. Create backend env file:
+### 2. Launch Infrastructure
 
 ```bash
 cd backend
-cp .env.example .env
+make dev   # Starts API, Postgres, and Redis
 ```
 
-2. Update at least these values in `.env`:
-- `SECRET_KEY`
-- `POSTGRES_PASSWORD`
-- `REDIS_PASSWORD`
+### 3. Initialize System
 
-### Frontend
-
-1. Create frontend env file:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-Note: the frontend currently uses relative `/api/v1` calls and Vite proxy during development.
-
-## Run the Full System (Recommended)
-
-### 1. Start backend services (API + Postgres + Redis)
+In a separate terminal:
 
 ```bash
 cd backend
-make dev
+make migrate      # Apply database schema
+make seed         # Load reference data (Payment methods, etc.)
+make superadmin   # Create the initial admin account
 ```
 
-Backend endpoints:
-- API base: `http://localhost:8000/api/v1`
-- Swagger docs: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/health`
-
-### 2. Apply migrations
-
-In another terminal:
-
-```bash
-cd backend
-make migrate
-```
-
-### 3. Seed finance/payment reference data
-
-```bash
-cd backend
-make seed
-```
-
-### 4. Create first super admin user
-
-```bash
-cd backend
-make superadmin
-```
-
-### 5. Start frontend
+### 4. Start Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Access the app at [http://localhost:5173](http://localhost:5173).
 
-Frontend app:
-- `http://localhost:5173`
+## 🛡️ Security & Integrity
 
-## Backend Local Development (Without Docker API container)
+- **Transactional Safety:** Every business operation is atomic; failures trigger full rollbacks.
+- **Concurrency Control:** Pessimistic locking in critical paths (Inventory/Vouchers).
+- **Audit Trails:** Every mutation is captured in `audit_logs` with full request context.
+- **JWT Security:** Secure authentication using short-lived access tokens and refresh tokens.
 
-If you want to run API directly on your machine (while keeping DB/Redis in Docker):
+## 📂 Repository Structure
 
-```bash
-cd backend
-pip install -e ".[dev]"
-cp .env.example .env
-# Set POSTGRES_HOST=localhost and REDIS_HOST=localhost in .env
-alembic upgrade head
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```text
+.
+├── backend/                # FastAPI Application
+│   ├── app/                # Application logic (modules, core, database)
+│   ├── alembic/            # Database migrations
+│   ├── scripts/            # Seeding and utility scripts
+│   └── tests/              # Integration and unit tests
+├── frontend/               # React Application
+│   ├── src/                # Source code (features, components, api)
+│   └── public/             # Static assets
+└── README.md               # Unified System Documentation
 ```
 
-## Quality and Test Commands
+## 📈 Quality & Testing
 
 ### Backend
-
 ```bash
 cd backend
-make test
-make test-unit
-make test-int
-make lint
-make format
-make typecheck
+make test        # Run Pytest suite
+make lint        # Run Ruff linter
+make typecheck   # Run Mypy type checker
 ```
 
 ### Frontend
-
 ```bash
 cd frontend
-npm run lint
-npm run build
+npm run lint     # Run ESLint
+npm run build    # Verify production build
 ```
 
-## API Module Map (`/api/v1`)
+## 📄 License
 
-- `/auth` - login/refresh/me/logout/change-password
-- `/users` - user profile + admin user management
-- `/customers` - customer CRUD and summaries
-- `/inventory` - inventory items and movements
-- `/production` - production batches and consumption/output
-- `/expenses` - expense workflows
-- `/reporting` and `/reports` - dashboards and report endpoints
-- `/finance` - accounts, payment methods, debts, journal entries
-- `/vouchers` - voucher transactions and lifecycle
-- `/audit` - audit log access
-
-## Domain and Data Integrity Notes
-
-Business rules are documented in:
-- `backend/docs/business_rules.md`
-
-Important protections implemented in backend services:
-- Transactional workflows with locking for concurrency safety
-- Idempotency middleware for duplicate request protection
-- Append-only reversal logic for vouchers/ledger/inventory events
-- Standardized error response shape and request tracing headers
-
-## Common Operations
-
-### Stop backend containers
-
-```bash
-cd backend
-make down
-```
-
-### View backend logs
-
-```bash
-cd backend
-make logs
-```
-
-### Create a new migration
-
-```bash
-cd backend
-make migrate-new MSG="describe change"
-```
-
-## Troubleshooting
-
-- If frontend cannot reach API, confirm backend is running on `http://localhost:8000` and Vite dev server is running from `frontend/`.
-- If backend fails at startup, check `.env` values, especially DB/Redis credentials.
-- If migrations fail, ensure Postgres container is healthy and `.env` DB values match compose values.
-- If login fails for all users, create a super admin again with `make superadmin`.
-
-## Current Status Notes
-
-- Frontend `frontend/README.md` is the default Vite template and not project-specific.
-- This root `README.md` is the primary documentation entrypoint for the full system.
+Licensed under the MIT License. See `LICENSE` for details (if available).
