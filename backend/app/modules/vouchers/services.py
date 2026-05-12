@@ -84,13 +84,16 @@ class VoucherService(BaseService):
         )
         await self._voucher_repo.create(voucher)
 
+        from app.common.services.pricing import calculate_unit_price
+
         items = [
             VoucherItem(
                 voucher_id=voucher.id,
                 inventory_item_id=item_data.inventory_item_id,
                 quantity=item_data.quantity,
                 unit=item_data.unit,
-                unit_price=item_data.unit_price,
+                price_per_viss=item_data.price_per_viss,
+                unit_price=calculate_unit_price(item_data.unit, item_data.price_per_viss),
                 discount_percent=item_data.discount_percent,
                 notes=item_data.notes,
             )
@@ -273,13 +276,16 @@ class VoucherService(BaseService):
         await self._session.flush()
 
         # Create replacement items
+        from app.common.services.pricing import calculate_unit_price
+
         new_items = [
             VoucherItem(
                 voucher_id=voucher_id,
                 inventory_item_id=item_data.inventory_item_id,
                 quantity=item_data.quantity,
                 unit=item_data.unit,
-                unit_price=item_data.unit_price,
+                price_per_viss=item_data.price_per_viss,
+                unit_price=calculate_unit_price(item_data.unit, item_data.price_per_viss),
                 discount_percent=item_data.discount_percent,
                 notes=item_data.notes,
             )

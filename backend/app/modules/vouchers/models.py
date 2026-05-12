@@ -105,6 +105,10 @@ class VoucherItem(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     quantity: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     unit: Mapped[str] = mapped_column(String(16), nullable=False)
+    # price_per_viss is the user-facing input price (oil is always priced per viss)
+    price_per_viss: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False, default=Decimal("0"))
+    # unit_price is the computed effective per-unit price (= price_per_viss for VISS,
+    # = price_per_viss / 100 for TICAL). Stored for inventory movement records.
     unit_price: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     discount_percent: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, default=Decimal("0")

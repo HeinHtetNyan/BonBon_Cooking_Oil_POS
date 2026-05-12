@@ -13,7 +13,7 @@ export interface VoucherItemCreate {
   inventory_item_id: string;
   quantity: number;
   unit: WeightUnit;
-  unit_price: number;
+  price_per_viss: number;
   discount_percent?: number;
   notes?: string;
 }
@@ -23,6 +23,7 @@ export interface VoucherItemResponse {
   inventory_item_id: string;
   quantity: number;
   unit: WeightUnit;
+  price_per_viss: number;
   unit_price: number;
   discount_percent: number;
   line_total: number;

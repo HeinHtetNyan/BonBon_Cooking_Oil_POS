@@ -7,7 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, computed_field, field_validator
 
 from app.common.schemas.base import AppBaseModel
 from app.modules.vouchers.enums import VoucherStatus, VoucherType
@@ -22,9 +22,20 @@ class VoucherItemCreate(AppBaseModel):
     inventory_item_id: UUID
     quantity: Decimal = Field(gt=0, decimal_places=6)
     unit: str = Field(min_length=1, max_length=16)
-    unit_price: Decimal = Field(ge=0, decimal_places=4)
+    # price_per_viss is the only pricing input; per-unit price is derived from it.
+    price_per_viss: Decimal = Field(ge=0, decimal_places=4)
     discount_percent: Decimal = Field(default=Decimal("0"), ge=0, le=100, decimal_places=2)
     notes: str | None = None
+
+    @field_validator("unit")
+    @classmethod
+    def _validate_unit(cls, v: str) -> str:
+        norm = v.lower()
+        if norm not in ("viss", "tical"):
+            raise ValueError(
+                f"unit must be 'viss' or 'tical' for oil pricing, got '{v}'"
+            )
+        return norm
 
 
 class VoucherItemResponse(AppBaseModel):
@@ -32,10 +43,25 @@ class VoucherItemResponse(AppBaseModel):
     inventory_item_id: UUID
     quantity: Decimal
     unit: str
+    # price_per_viss: the user-facing input price (oil always priced per viss)
+    price_per_viss: Decimal = Decimal("0")
+    # unit_price: effective per-unit price computed from price_per_viss + unit
     unit_price: Decimal
     discount_percent: Decimal
     line_total: Decimal
     notes: str | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def calculated_unit_price(self) -> Decimal:
+        """Effective per-unit price derived from price_per_viss and unit."""
+        return self.unit_price
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_price(self) -> Decimal:
+        """Alias for line_total; included per API response spec."""
+        return self.line_total
 
 
 class VoucherPaymentCreate(AppBaseModel):

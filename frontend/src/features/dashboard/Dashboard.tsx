@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  TrendingUp, Users, Receipt, AlertTriangle, Droplets, DollarSign,
+  TrendingUp, Users, Receipt, AlertTriangle, Droplets, DollarSign, TrendingDown,
 } from "lucide-react";
 import { reportsApi } from "@/api/reports";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
@@ -95,7 +95,7 @@ export function Dashboard() {
       </div>
 
       {/* Financial stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
           title={t("dashboard.todaySales")}
           value={formatCurrency(summary?.today_sales_amount ?? 0)}
@@ -108,6 +108,12 @@ export function Dashboard() {
           value={formatCurrency(summary?.today_expenses_amount ?? 0)}
           icon={Receipt}
           color="bg-orange-500"
+        />
+        <StatCard
+          title={t("dashboard.todayNetProfit")}
+          value={formatCurrency((summary?.today_sales_amount ?? 0) - (summary?.today_expenses_amount ?? 0))}
+          icon={(summary?.today_sales_amount ?? 0) >= (summary?.today_expenses_amount ?? 0) ? TrendingUp : TrendingDown}
+          color={(summary?.today_sales_amount ?? 0) >= (summary?.today_expenses_amount ?? 0) ? "bg-green-600" : "bg-red-600"}
         />
         <StatCard
           title={t("dashboard.thisMonthSales")}

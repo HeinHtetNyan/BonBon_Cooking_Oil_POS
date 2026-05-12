@@ -56,13 +56,9 @@ class WeightUnit(StrEnum):
 
     1 viss (peittha) = 100 ticals (kyattha)
     1 tical ≈ 16.33 grams
-    1 viss ≈ 1.633 kg
     """
     VISS = "viss"
     TICAL = "tical"
-    KG = "kg"
-    LITER = "liter"
-    UNIT = "unit"  # for packaging/consumables
 
 
 class InventoryMovementStatus(StrEnum):

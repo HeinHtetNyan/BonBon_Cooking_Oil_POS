@@ -28,7 +28,7 @@ const itemSchema = z.object({
   inventory_item_id: z.string().min(1, "Required"),
   quantity: z.coerce.number().positive("Must be positive"),
   unit: z.string().min(1, "Required"),
-  unit_price: z.coerce.number().min(0, "Must be >= 0"),
+  price_per_viss: z.coerce.number().min(0, "Must be >= 0"),
   discount_percent: z.coerce.number().min(0).max(100).optional(),
   notes: z.string().optional(),
 });
@@ -49,8 +49,9 @@ const voucherSchema = z.object({
 
 type FormValues = z.infer<typeof voucherSchema>;
 
-function calcLineTotal(qty: number, price: number, discPct: number): number {
-  const gross = qty * price;
+function calcLineTotal(qty: number, unit: string, pricePerViss: number, discPct: number): number {
+  const unitPrice = unit === "tical" ? pricePerViss / 100 : pricePerViss;
+  const gross = qty * unitPrice;
   return Math.round(gross * (1 - discPct / 100));
 }
 
@@ -89,7 +90,7 @@ export function VoucherCreate() {
       customer_id: preselectedCustomerId ?? "",
       sale_date: new Date().toISOString().split("T")[0],
       voucher_type: "sale",
-      items: [{ inventory_item_id: "", quantity: 1, unit: "viss", unit_price: 0 }],
+      items: [{ inventory_item_id: "", quantity: 1, unit: "viss", price_per_viss: 0 }],
       extra_charges: [],
     },
   });
@@ -105,7 +106,7 @@ export function VoucherCreate() {
   const watchedCustomerId = watch("customer_id");
 
   const itemsSubtotal = watchedItems.reduce((sum, item) => {
-    return sum + calcLineTotal(item.quantity || 0, item.unit_price || 0, item.discount_percent || 0);
+    return sum + calcLineTotal(item.quantity || 0, item.unit || "viss", item.price_per_viss || 0, item.discount_percent || 0);
   }, 0);
 
   const extraTotal = watchedExtras.reduce((sum, ec) => sum + Math.round(ec.amount || 0), 0);
@@ -122,8 +123,12 @@ export function VoucherCreate() {
         ...data,
         customer_id: data.customer_id || undefined,
         items: data.items.map((item) => ({
-          ...item,
+          inventory_item_id: item.inventory_item_id,
+          quantity: item.quantity,
           unit: item.unit as WeightUnit,
+          price_per_viss: item.price_per_viss,
+          discount_percent: item.discount_percent,
+          notes: item.notes,
         })),
         extra_charges: data.extra_charges?.map((ec) => ({
           description: ec.description,
@@ -246,7 +251,7 @@ export function VoucherCreate() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ inventory_item_id: "", quantity: 1, unit: "viss", unit_price: 0 })}
+              onClick={() => append({ inventory_item_id: "", quantity: 1, unit: "viss", price_per_viss: 0 })}
             >
               <Plus className="w-4 h-4 mr-1" />
               {t("vouchers.addItem")}
@@ -287,7 +292,7 @@ export function VoucherCreate() {
                   <div className="sm:col-span-2 space-y-1">
                     {idx === 0 && <Label className="text-xs hidden sm:block">{t("vouchers.unitPrice")}</Label>}
                     <Label className="text-xs sm:hidden text-muted-foreground">{t("vouchers.unitPrice")}</Label>
-                    <Input type="number" step="1" {...register(`items.${idx}.unit_price`)} />
+                    <Input type="number" step="1" {...register(`items.${idx}.price_per_viss`)} />
                   </div>
                   <div className="sm:col-span-1 space-y-1">
                     {idx === 0 && <Label className="text-xs hidden sm:block">{t("vouchers.discountPct")}</Label>}

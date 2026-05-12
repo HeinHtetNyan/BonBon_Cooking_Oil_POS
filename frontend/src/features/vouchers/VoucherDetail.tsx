@@ -47,7 +47,7 @@ const editSchema = z.object({
     inventory_item_id: z.string().min(1, "Required"),
     quantity: z.coerce.number().positive("Must be > 0"),
     unit: z.string().min(1),
-    unit_price: z.coerce.number().min(0),
+    price_per_viss: z.coerce.number().min(0),
     discount_percent: z.coerce.number().min(0).max(100).optional(),
   })).min(1, "At least one item required"),
 });
@@ -150,7 +150,7 @@ export function VoucherDetail() {
         inventory_item_id: it.inventory_item_id,
         quantity: it.quantity,
         unit: it.unit as import("@/types").WeightUnit,
-        unit_price: it.unit_price,
+        price_per_viss: it.price_per_viss,
         discount_percent: it.discount_percent ?? 0,
       })));
       return vouchersApi.update(id!, {
@@ -211,7 +211,7 @@ export function VoucherDetail() {
         inventory_item_id: it.inventory_item_id,
         quantity: Number(it.quantity),
         unit: it.unit,
-        unit_price: Number(it.unit_price),
+        price_per_viss: Number(it.price_per_viss),
         discount_percent: Number(it.discount_percent),
       })),
     });
@@ -519,7 +519,7 @@ export function VoucherDetail() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-semibold">{t("vouchers.lineItems")}</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={() => appendItem({ inventory_item_id: "", quantity: 1, unit: "viss", unit_price: 0, discount_percent: 0 })}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => appendItem({ inventory_item_id: "", quantity: 1, unit: "viss", price_per_viss: 0, discount_percent: 0 })}>
                   <Plus className="w-3 h-3 mr-1" /> {t("vouchers.addItem")}
                 </Button>
               </div>
@@ -541,13 +541,10 @@ export function VoucherDetail() {
                       <select className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" {...regEdit(`items.${i}.unit`)}>
                         <option value="viss">Viss</option>
                         <option value="tical">Tical</option>
-                        <option value="kg">KG</option>
-                        <option value="liter">Liter</option>
-                        <option value="unit">Unit</option>
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <Input type="number" step="1" placeholder={t("vouchers.unitPrice")} {...regEdit(`items.${i}.unit_price`)} />
+                      <Input type="number" step="1" placeholder={t("vouchers.unitPrice")} {...regEdit(`items.${i}.price_per_viss`)} />
                     </div>
                     <div className="sm:col-span-1">
                       <Input type="number" step="0.01" placeholder={t("vouchers.discountPct")} {...regEdit(`items.${i}.discount_percent`)} />

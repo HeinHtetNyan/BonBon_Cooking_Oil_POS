@@ -23,7 +23,7 @@ import type { InventoryItemType, InventoryItemResponse } from "@/types";
 const createSchema = z.object({
   name: z.string().min(1),
   item_type: z.enum(["raw_material", "finished_oil", "packaging"]),
-  unit: z.enum(["viss", "tical", "kg", "liter", "unit"]),
+  unit: z.enum(["viss", "tical"]),
   description: z.string().optional(),
   initial_quantity: z.coerce.number().positive().optional().or(z.literal("")),
   unit_cost: z.coerce.number().min(0).optional().or(z.literal("")),

@@ -18,13 +18,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const materialSchema = z.object({
   material_item_id: z.string().uuid("Select a material"),
   quantity: z.coerce.number().positive("Must be > 0"),
-  unit: z.enum(["viss", "tical", "kg", "liter", "unit"]),
+  unit: z.enum(["viss", "tical"]),
 });
 
 const outputSchema = z.object({
   output_item_id: z.string().uuid("Select an output item"),
   output_amount: z.coerce.number().positive("Must be > 0"),
-  output_unit: z.enum(["viss", "tical", "kg", "liter", "unit"]),
+  output_unit: z.enum(["viss", "tical"]),
 });
 
 const createSchema = z.object({

@@ -40,9 +40,7 @@ if TYPE_CHECKING:
     from app.modules.inventory.models import InventoryItem
 
 
-# ---------------------------------------------------------------------------
 # Shared data structures
-# ---------------------------------------------------------------------------
 
 @dataclass
 class IntegrityIssue:
@@ -79,9 +77,7 @@ class IntegrityReport:
         self.issues.append(IntegrityIssue("warning", code, message, dict(context)))
 
 
-# ---------------------------------------------------------------------------
 # InventoryValidationService
-# ---------------------------------------------------------------------------
 
 class InventoryValidationService:
     """
@@ -217,10 +213,7 @@ class InventoryValidationService:
 
         return report
 
-
-# ---------------------------------------------------------------------------
 # FinancialIntegrityService
-# ---------------------------------------------------------------------------
 
 class FinancialIntegrityService:
     """

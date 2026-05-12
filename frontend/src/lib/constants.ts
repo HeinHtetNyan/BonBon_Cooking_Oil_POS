@@ -54,9 +54,6 @@ export const INVENTORY_ITEM_TYPES = {
 export const WEIGHT_UNITS = {
   viss: "Viss",
   tical: "Tical",
-  kg: "KG",
-  liter: "Liter",
-  unit: "Unit",
 } as const;
 
 export const BATCH_STATUSES = {

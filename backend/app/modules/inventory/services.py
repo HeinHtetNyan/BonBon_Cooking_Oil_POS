@@ -41,31 +41,13 @@ class UnitConversionService:
     Centralized unit conversion. NEVER do conversions inline in other services.
 
     Conversion constants (exact Decimal values — no floats):
-        1 viss  = 100 ticals
-        1 viss  = 1.6329 kg
-        1 tical = 0.016329 kg
-        1 liter (cooking oil) ≈ 0.92 kg
+        1 viss = 100 ticals
     """
 
     CONVERSION_TABLE: dict[tuple[WeightUnit, WeightUnit], Decimal] = {
-        # viss ↔ tical
+        # viss ↔ tical  (1 viss = 100 ticals)
         (WeightUnit.VISS, WeightUnit.TICAL): Decimal("100"),
         (WeightUnit.TICAL, WeightUnit.VISS): Decimal("0.01"),
-        # viss ↔ kg
-        (WeightUnit.VISS, WeightUnit.KG): Decimal("1.6329"),
-        (WeightUnit.KG, WeightUnit.VISS): Decimal("0.612400975"),
-        # tical ↔ kg
-        (WeightUnit.TICAL, WeightUnit.KG): Decimal("0.016329"),
-        (WeightUnit.KG, WeightUnit.TICAL): Decimal("61.2400975"),
-        # liter ↔ kg  (cooking oil approximation: 1 liter ≈ 0.92 kg)
-        (WeightUnit.LITER, WeightUnit.KG): Decimal("0.92"),
-        (WeightUnit.KG, WeightUnit.LITER): Decimal("1.086956521739"),
-        # liter ↔ viss
-        (WeightUnit.LITER, WeightUnit.VISS): Decimal("0.563418"),
-        (WeightUnit.VISS, WeightUnit.LITER): Decimal("1.775"),
-        # liter ↔ tical
-        (WeightUnit.LITER, WeightUnit.TICAL): Decimal("56.3418"),
-        (WeightUnit.TICAL, WeightUnit.LITER): Decimal("0.01775"),
     }
 
     @classmethod
