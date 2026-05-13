@@ -72,6 +72,9 @@ class UserSummary(AppBaseModel):
 
     id: UUID
     username: str
+    email: str
     full_name: str
+    phone: str | None
     role: UserRole
     status: UserStatus
+    last_login_at: datetime | None

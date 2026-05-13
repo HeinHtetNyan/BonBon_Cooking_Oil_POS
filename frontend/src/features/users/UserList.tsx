@@ -34,7 +34,7 @@ const createSchema = z.object({
   full_name: z.string().min(1),
   phone: z.string().optional(),
   role: z.enum(["super_admin", "admin", "manager", "cashier", "warehouse"]),
-  password: z.string().min(8).regex(/[A-Z]/, "Must have uppercase").regex(/[0-9]/, "Must have digit"),
+  password: z.string().min(8).refine((v) => /[A-Z]/.test(v), "Must have uppercase").refine((v) => /[0-9]/.test(v), "Must have digit"),
 });
 type CreateForm = z.infer<typeof createSchema>;
 
@@ -47,7 +47,7 @@ const editSchema = z.object({
 type EditForm = z.infer<typeof editSchema>;
 
 const passwordSchema = z.object({
-  new_password: z.string().min(8).regex(/[A-Z]/, "Must have uppercase").regex(/[0-9]/, "Must have digit"),
+  new_password: z.string().min(8).refine((v) => /[A-Z]/.test(v), "Must have uppercase").refine((v) => /[0-9]/.test(v), "Must have digit"),
   confirm_password: z.string(),
 }).refine((d) => d.new_password === d.confirm_password, {
   message: "Passwords do not match",
@@ -154,6 +154,7 @@ export function UserList() {
                 <TableRow>
                   <TableHead>{t("users.userCol")}</TableHead>
                   <TableHead>{t("users.usernameCol")}</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>{t("users.roleCol")}</TableHead>
                   <TableHead>{t("users.statusCol")}</TableHead>
                   <TableHead>{t("users.lastLogin")}</TableHead>

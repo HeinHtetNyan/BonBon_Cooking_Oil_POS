@@ -29,9 +29,12 @@ export interface UserResponse {
 export interface UserSummary {
   id: string;
   username: string;
+  email: string;
   full_name: string;
+  phone: string | null;
   role: UserRole;
   status: UserStatus;
+  last_login_at: string | null;
 }
 
 export interface UserCreate {
