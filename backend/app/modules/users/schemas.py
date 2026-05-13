@@ -54,6 +54,19 @@ class UserResponse(UserBase):
     is_deleted: bool = False
 
 
+class UserSetPassword(AppBaseModel):
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _validate_password(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one digit")
+        return v
+
+
 class UserSummary(AppBaseModel):
     """Lightweight user representation for embedding in other responses."""
 
@@ -61,3 +74,4 @@ class UserSummary(AppBaseModel):
     username: str
     full_name: str
     role: UserRole
+    status: UserStatus

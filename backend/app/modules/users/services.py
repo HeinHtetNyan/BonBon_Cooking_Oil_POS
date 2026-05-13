@@ -87,6 +87,25 @@ class UserService(BaseService):
             updated_by=actor_id,
         )
 
+    async def set_password(
+        self,
+        user_id: UUID,
+        new_password: str,
+        *,
+        actor_id: str | None = None,
+    ) -> User:
+        user = await self.get_user(user_id)
+        return await self._repo.update(
+            user,
+            hashed_password=hash_password(new_password),
+            updated_by=actor_id,
+        )
+
+    async def delete_user(self, user_id: UUID, *, actor_id: str | None = None) -> User:
+        user = await self.get_user(user_id)
+        await self._repo.soft_delete(user)
+        return user
+
     async def list_users(
         self,
         params: PaginationParams,

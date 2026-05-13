@@ -1,4 +1,4 @@
-import { Menu, Bell, LogOut, User, Settings, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Menu, Bell, LogOut, Wifi, WifiOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useIsMutating } from "@tanstack/react-query";
@@ -110,13 +110,6 @@ export function Header() {
               <p className="font-medium">{user?.full_name}</p>
               <p className="text-xs text-muted-foreground font-normal">{user?.email}</p>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/profile")}>
-              <User className="mr-2 h-4 w-4" /> {t("header.profile")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              <Settings className="mr-2 h-4 w-4" /> {t("header.settings")}
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" /> {t("header.logout")}

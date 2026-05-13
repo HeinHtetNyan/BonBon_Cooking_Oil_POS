@@ -31,6 +31,7 @@ export interface UserSummary {
   username: string;
   full_name: string;
   role: UserRole;
+  status: UserStatus;
 }
 
 export interface UserCreate {

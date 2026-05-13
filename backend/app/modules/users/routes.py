@@ -13,7 +13,7 @@ from app.modules.auth.dependencies import get_current_active_user, require_role
 from app.modules.users.dependencies import get_user_service
 from app.modules.users.enums import UserRole
 from app.modules.users.models import User
-from app.modules.users.schemas import UserCreate, UserResponse, UserSummary, UserUpdate
+from app.modules.users.schemas import UserCreate, UserResponse, UserSetPassword, UserSummary, UserUpdate
 from app.modules.users.services import UserService
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -81,4 +81,37 @@ async def update_user(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> SuccessResponse[UserResponse]:
     user = await service.update_user(user_id, data, actor_id=str(current_user.id))
+    return ok(UserResponse.model_validate(user))
+
+
+@router.post(
+    "/{user_id}/set-password",
+    response_model=SuccessResponse[UserResponse],
+    dependencies=[Depends(require_role(UserRole.SUPER_ADMIN))],
+)
+async def set_user_password(
+    user_id: UUID,
+    data: UserSetPassword,
+    service: Annotated[UserService, Depends(get_user_service)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> SuccessResponse[UserResponse]:
+    if user_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Use change-password to update your own password")
+    user = await service.set_password(user_id, data.new_password, actor_id=str(current_user.id))
+    return ok(UserResponse.model_validate(user))
+
+
+@router.delete(
+    "/{user_id}",
+    response_model=SuccessResponse[UserResponse],
+    dependencies=[Depends(require_role(UserRole.SUPER_ADMIN))],
+)
+async def delete_user(
+    user_id: UUID,
+    service: Annotated[UserService, Depends(get_user_service)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+) -> SuccessResponse[UserResponse]:
+    if user_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot delete your own account")
+    user = await service.delete_user(user_id, actor_id=str(current_user.id))
     return ok(UserResponse.model_validate(user))
