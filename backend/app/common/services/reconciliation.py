@@ -48,9 +48,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Shared data structures
-# ---------------------------------------------------------------------------
 
 @dataclass
 class ReconciliationDiscrepancy:
@@ -81,9 +79,7 @@ class ReconciliationReport:
         self.discrepancies.append(d)
 
 
-# ---------------------------------------------------------------------------
 # InventoryReconciliationService
-# ---------------------------------------------------------------------------
 
 class InventoryReconciliationService:
     """
@@ -239,9 +235,7 @@ class InventoryReconciliationService:
         return round_quantity(total_in - total_out)
 
 
-# ---------------------------------------------------------------------------
 # FinancialReconciliationService
-# ---------------------------------------------------------------------------
 
 class FinancialReconciliationService:
     """

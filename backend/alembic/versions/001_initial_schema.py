@@ -19,9 +19,7 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-# ---------------------------------------------------------------------------
 # Shared helper columns (mirrors database.mixins)
-# ---------------------------------------------------------------------------
 
 _UUID = postgresql.UUID(as_uuid=True)
 _NOW = sa.text("now()")
@@ -49,9 +47,7 @@ def _full_audit() -> list[sa.Column]:
     ]
 
 
-# ---------------------------------------------------------------------------
 # upgrade
-# ---------------------------------------------------------------------------
 
 
 def upgrade() -> None:
@@ -599,9 +595,7 @@ def upgrade() -> None:
     op.create_index("ix_audit_logs_tenant_created", "audit_logs", ["tenant_id", "created_at"])
 
 
-# ---------------------------------------------------------------------------
 # downgrade
-# ---------------------------------------------------------------------------
 
 
 def downgrade() -> None:
